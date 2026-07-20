@@ -1,0 +1,15 @@
+{
+  "observacao": "Tokens de direção de arte. Hex ilustrativos — substituir pelos oficiais da 4blue (docs/04).",
+  "paletas": {
+    "azul-corporativo": {
+      "nome": "Azul Corporativo",
+      "clima": "Institucional, técnico",
+      "hex": { "primaria": "#1B4FD8", "fundo": "#0B1B3F", "texto": "#FFFFFF" }
+    },
+    "laranja-criativo": {
+      "nome": "Laranja Criativo",
+      "clima": "Leve, provocativo",
+      "hex": { "primaria": "#FF7A1A", "fundo": "#FFF4EC", "texto": "#1A1A1A" }
+    }
+  }
+}
