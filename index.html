@@ -1,84 +1,134 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>4creaty · Gerador de criativos 4blue</title>
-  <meta name="description" content="Copy validada vira carrossel e imagem no Canva, sem quebrar o layout.">
-  <link rel="stylesheet" href="assets/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4creaty — Gerador de Carrossel 4blue</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
-  <header class="topo">
-    <div class="marca">
-      <span class="marca-simbolo" aria-hidden="true">&#9670;</span>
-      <div>
-        <h1>4creaty</h1>
-        <p>Copy validada vira arte no Canva — sem quebrar o layout</p>
+  <div class="app">
+    <div class="toolbar">
+      <h2>
+        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        4creaty — Gerador de Carrossel
+      </h2>
+      <div class="toolbar-actions">
+        <button class="btn-secondary" onclick="abrirBiblioteca()" title="Abrir carrossel salvo no Drive">
+          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-7.9a1 1 0 0 1-.8-.4l-1-1.3A1 1 0 0 0 9.5 4H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/></svg>
+          Abrir
+        </button>
+        <button class="btn-secondary" onclick="salvarCarrossel()" title="Salvar carrossel atual no Drive">
+          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+        <button class="btn-secondary" onclick="openHelp()" title="Guia de sintaxe">
+          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Sintaxe
+        </button>
+        <button class="btn-primary" onclick="generateCarousel()" title="Gerar carrossel (Ctrl+Enter)">
+          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Gerar
+        </button>
       </div>
     </div>
-  </header>
 
-  <main>
-    <p id="erro_global" class="erro-global oculto"></p>
+    <div class="main-layout">
+      <!-- Editor -->
+      <div class="editor-panel">
+        <div class="panel-head">
+          <label class="panel-title">Texto do Carrossel</label>
+          <div class="editor-actions">
+            <button class="btn-secondary" onclick="document.getElementById('file-input').click()" title="Importar .docx, .txt ou .md">
+              <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+              Importar doc
+            </button>
+            <input type="file" id="file-input" accept=".docx,.txt,.md,.markdown" style="display:none" />
+            <button class="btn-secondary" onclick="clearEditor()" title="Limpar editor">Limpar</button>
+          </div>
+        </div>
+        <textarea
+          id="editor"
+          placeholder="Cole aqui a copy do carrossel. O preview aparece na hora.
+Separe os cards com uma linha em branco (ou use #1, #2, #3...).
 
-    <!-- Passo 1 · Modelos -->
-    <section class="cartao">
-      <h2>
-        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-        Modelos
-        <span class="passo">1</span>
-      </h2>
-      <p class="dica">Escolha um ou mais modelos — a mesma copy gera uma variação por modelo. Campos repetidos usam o limite mais restrito.</p>
-      <div id="lista_modelos" class="lista-modelos"></div>
-      <p class="nota">Catálogo em fase de exemplo. Modelos oficiais da 4blue entram a qualquer momento via <code>modelos/index.json</code> (skill <code>4creaty-novo-modelo</code>).</p>
-    </section>
+Exemplo:
+**Título em negrito** com =destaque amarelo=
+Subtexto normal aqui
 
-    <!-- Passo 2 · Direção de arte -->
-    <section class="cartao">
-      <h2>
-        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-        Direção de arte
-        <span class="passo">2</span>
-      </h2>
-      <p class="dica">Você escolhe o clima; o sistema resolve os hexadecimais do template.</p>
-      <div id="area_paletas" class="area-paletas"></div>
-    </section>
-
-    <!-- Passo 3 · Conteúdo -->
-    <section class="cartao">
-      <h2>
-        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-        Conteúdo
-        <span class="passo">3</span>
-      </h2>
-      <div id="area_campos"><p class="vazio">Selecione ao menos um modelo para gerar os campos.</p></div>
-    </section>
-
-    <!-- Barra de ação -->
-    <section class="barra-acao">
-      <div class="identificacao">
-        <label for="autor">Seu e-mail (opcional)</label>
-        <input type="email" id="autor" placeholder="voce@4blue.com.br" autocomplete="email">
+## Passo 1
+*Negrito inline* e _itálico inline_"
+        ></textarea>
+        <div id="status-app" class="status-linha"></div>
       </div>
-      <div class="acoes">
-        <p id="status_form" class="status">Selecione um modelo para começar.</p>
-        <button id="btn_csv" type="button" disabled>
-          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Gerar CSV para o Canva
-        </button>
-        <button id="btn_enviar" type="button" class="secundario oculto" disabled>
-          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Enviar para a planilha
-        </button>
+
+      <!-- Preview -->
+      <div class="preview-panel">
+        <label class="panel-title">Preview dos Cards (ao vivo)</label>
+        <div id="preview-empty" class="preview-empty">
+          Cole um texto para ver os cards aparecerem aqui.
+        </div>
+        <div id="grid" class="grid" style="display:none"></div>
+        <div id="download-bar" style="display:none" class="download-bar">
+          <div class="fmt">
+            <label for="export-format">Formato</label>
+            <select id="export-format">
+              <option value="png">PNG</option>
+              <option value="jpeg">JPG</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="downloadAll()">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Baixar todos
+          </button>
+          <button class="btn-secondary" onclick="publicarNoDrive()" title="Enviar os PNGs para a pasta compartilhada no Drive">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/><path d="M20 16.7A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.2"/></svg>
+            Publicar no Drive
+          </button>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <p class="rodape-instrucao">Depois de gerar: Canva &rarr; abrir o template do modelo &rarr; Apps &rarr; <strong>Criar em Massa</strong> &rarr; enviar o CSV &rarr; conectar colunas &rarr; Gerar.</p>
-  </main>
+    <!-- Modal: Abrir da biblioteca (Drive) -->
+    <div id="open-modal" class="modal-overlay" style="display:none" onclick="fecharBiblioteca(event)">
+      <div class="modal">
+        <h3>Abrir carrossel salvo</h3>
+        <div id="saved-list" class="saved-list"><div class="saved-vazio">Carregando...</div></div>
+        <button class="btn-secondary" onclick="fecharBiblioteca()">Fechar</button>
+      </div>
+    </div>
 
-  <footer class="rodape">4creaty &middot; 4blue &mdash; validado na origem, renderizado no Canva</footer>
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay" style="display:none" onclick="closeHelp(event)">
+      <div class="modal">
+        <h3>Guia de Sintaxe</h3>
+        <table>
+          <thead><tr><th>Marcação</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td>Linha em branco</td><td>Separa um card do outro (sem precisar de #N)</td></tr>
+            <tr><td><code>#1</code>, <code>#2</code>…</td><td>Também inicia um card (opcional)</td></tr>
+            <tr><td><code>:blue</code></td><td>Card com fundo azul escuro</td></tr>
+            <tr><td><code>**texto**</code></td><td>Parágrafo inteiro em negrito</td></tr>
+            <tr><td><code>*texto*</code></td><td>Negrito inline</td></tr>
+            <tr><td><code>_texto_</code></td><td>Itálico inline</td></tr>
+            <tr><td><code>=texto=</code></td><td>Destaque amarelo</td></tr>
+            <tr><td><code>## Título</code></td><td>Título do passo (grande, negrito)</td></tr>
+            <tr><td><code>---</code></td><td>Linha divisória</td></tr>
+          </tbody>
+        </table>
+        <div class="modal-example">
+          <strong>Também dá para importar .docx, .txt ou .md</strong> pelo botão "Importar doc" — o Word com negrito e títulos já vira card.
+        </div>
+        <button class="btn-primary" onclick="closeHelp()">Fechar</button>
+      </div>
+    </div>
+  </div>
 
-  <script src="assets/app.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="parser.js"></script>
+  <script src="renderer.js"></script>
+  <script src="app.js"></script>
+  <script src="storage.js"></script>
 </body>
 </html>
