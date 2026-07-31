@@ -13,6 +13,8 @@ function tokenAtual() { const s = sessao(); return s && s.token ? s.token : ""; 
 function setSessao(s) {
   if (s) localStorage.setItem(SESSAO_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSAO_KEY);
   atualizarConta();
+  const home = document.getElementById('home-screen');
+  if (home && home.style.display !== 'none' && typeof carregarHome === 'function') carregarHome();
 }
 
 function escapaTxt(t) { const d = document.createElement("div"); d.textContent = String(t); return d.innerHTML; }

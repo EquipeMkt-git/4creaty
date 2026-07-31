@@ -59,7 +59,9 @@ function toggleEmoji() {
 }
 
 function inserirEmoji(em) {
-  const el = (campoAtivo && document.body.contains(campoAtivo)) ? campoAtivo : document.getElementById('editor');
+  const el = (campoAtivo && document.body.contains(campoAtivo))
+    ? campoAtivo
+    : document.querySelector('#fields-wrap textarea, #fields-wrap input[type="text"]');
   if (!el) return;
   const s = el.selectionStart != null ? el.selectionStart : el.value.length;
   const e2 = el.selectionEnd != null ? el.selectionEnd : el.value.length;

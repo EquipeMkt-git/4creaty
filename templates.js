@@ -11,8 +11,14 @@
 
 const TEMPLATES = {
   notas: {
-    id: 'notas', nome: 'Carrossel (Notas)', tipo: 'carrossel',
-    formatos: ['4:5'], campos: null
+    id: 'notas', nome: 'Carrossel (Notas)', tipo: 'single',
+    formatos: ['4:5', '1:1', '9:16'],
+    campos: [
+      { id: 'texto', label: 'Texto do card (**negrito**, =destaque=, ## título, --- divisória)', tipo: 'textarea', principal: true, placeholder: '**Título do card**\n=destaque amarelo=\nTexto normal aqui' },
+      { id: 'header', label: 'Mostrar cabeçalho "Notas"', tipo: 'check', valorPadrao: true },
+      { id: 'imagem', label: 'Imagem de fundo (opcional)', tipo: 'image', bg: true }
+    ],
+    render: renderNotasCard
   },
   twitter: {
     id: 'twitter', nome: 'Post estilo Twitter', tipo: 'single',
@@ -68,7 +74,7 @@ function novaArtCard(estado, classeModelo) {
   const bg = estado.bg || '#FFFFFF';
   card.id = 'card-0';
   card.className = 'art-card ' + classeModelo +
-    (estado.format === '1:1' ? ' f-1-1' : ' f-9-16') +
+    ' f-' + String(estado.format).replace(':', '-') +
     (textoClaro(bg) ? ' txt-claro' : ' txt-escuro');
   card.style.background = bg;
   card.style.setProperty('--escala', estado.escala || 1);
@@ -182,5 +188,57 @@ function renderMancheteB(estado) {
   bloco.appendChild(elMarkup('div', 'destaque', f.destaque || 'DESTAQUE EM VERMELHO'));
   safe.appendChild(bloco);
   if (f.subtitulo) safe.appendChild(elMarkup('div', 'subtitulo', f.subtitulo));
+  return card;
+}
+
+/* ── Modelo: Carrossel (Notas) — agora card-based ────────────────────────── */
+
+// Interpreta o bloco de texto de UM card Notas em linhas tipadas.
+function parseBlocoNotas(texto) {
+  const lines = [];
+  (texto || '').split('\n').map(l => l.trim()).forEach(t => {
+    if (t === '') return;
+    if (/^---/.test(t)) { lines.push({ type: 'divider' }); return; }
+    if (/^##\s+/.test(t)) { lines.push({ type: 'step-title', text: t.replace(/^##\s+/, '') }); return; }
+    if (/^\*\*(.+)\*\*$/.test(t)) {
+      const text = t.replace(/^\*\*/, '').replace(/\*\*$/, '');
+      lines.push({ type: lines.length === 0 ? 'cover-title' : 'line-bold', text });
+      return;
+    }
+    lines.push({ type: 'line', text: t });
+  });
+  return lines;
+}
+
+function renderNotasCard(estado) {
+  const f = estado.fields || {};
+  const bg = estado.bg || '#FFFFFF';
+  const card = document.createElement('div');
+  card.id = 'card-0';
+  card.className = 'art-card tpl-notas f-' + String(estado.format).replace(':', '-') +
+    (textoClaro(bg) ? ' txt-claro' : ' txt-escuro');
+  card.style.background = bg;
+  card.style.setProperty('--escala', estado.escala || 1);
+  aplicarFundoImagem(card, f.imagem);
+
+  const fill = document.createElement('div');
+  fill.className = 'notas-fill';
+
+  if (f.header !== false) {
+    const header = document.createElement('div');
+    header.className = 'notas-header';
+    header.innerHTML = '<div class="nh-left"><span class="nh-chevron">‹</span> Notas</div>' +
+      '<div class="nh-right"><span class="nh-dots">···</span><span class="nh-ok">OK</span></div>';
+    fill.appendChild(header);
+  }
+
+  const body = document.createElement('div');
+  body.className = 'notas-body';
+  parseBlocoNotas(f.texto).forEach(l => {
+    if (l.type === 'divider') { const d = document.createElement('div'); d.className = 'card-divider'; body.appendChild(d); return; }
+    body.appendChild(elMarkup('p', l.type, l.text));
+  });
+  fill.appendChild(body);
+  card.appendChild(fill);
   return card;
 }

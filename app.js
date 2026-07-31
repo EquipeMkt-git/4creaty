@@ -5,8 +5,7 @@
  * Preview ao vivo, seletor de modelo/formato/cor, export PNG/JPG e ZIP.
  */
 
-let currentSlides = [];
-const estado = { templateId: 'notas', format: '4:5', bg: '#FFFFFF', escala: 1, nome: '', fields: {}, cards: [], cardAtivo: 0 };
+const estado = { templateId: 'notas', format: '4:5', bg: '#FFFFFF', escala: 1, nome: '', cards: [], cardAtivo: 0 };
 
 /* ── Cards (multi-card nos modelos de campo) ─────────────────────────────── */
 
@@ -21,8 +20,8 @@ function camposIniciais(t) {
 }
 function novoCard(templateId) { return { templateId, fields: camposIniciais(TEMPLATES[templateId]) }; }
 function cardAtual() { return estado.cards[estado.cardAtivo]; }
-// Campos "ativos": do card selecionado (modelos de campo) ou o objeto do notas.
-function f_() { return estado.templateId === 'notas' ? estado.fields : (cardAtual() ? cardAtual().fields : {}); }
+// Campos "ativos": do card selecionado.
+function f_() { return cardAtual() ? cardAtual().fields : {}; }
 
 function selecionarCard(i) { if (i < 0 || i >= estado.cards.length) return; estado.cardAtivo = i; aplicarModoUI(); render(); }
 function adicionarCard() { estado.cards.push(novoCard(cardAtual() ? cardAtual().templateId : estado.templateId)); estado.cardAtivo = estado.cards.length - 1; aplicarModoUI(); render(); }
@@ -58,7 +57,7 @@ function aplicarColar() {
   const texto = document.getElementById('colar-texto').value;
   const blocos = dividirBlocos(texto);
   if (!blocos.length) { statusApp('Nada para dividir.', 'erro'); return; }
-  const modelo = estado.templateId === 'notas' ? 'twitter' : estado.templateId;
+  const modelo = estado.templateId; // usa o modelo atual (inclui Notas)
   const t = TEMPLATES[modelo];
   const principal = (t.campos.find(c => c.principal) || {}).id;
   estado.templateId = modelo;
@@ -122,7 +121,7 @@ const SAMPLE = `#1
 ## Passo 1: fale com uma pessoa só
 Escreva como se fosse para *um cliente* específico — não para "todo mundo".
 
-#3 :blue
+#3
 =Comente EU QUERO= e receba o guia
 _Mando no seu direct_`;
 
@@ -130,13 +129,6 @@ _Mando no seu direct_`;
 
 document.addEventListener('DOMContentLoaded', () => {
   montarSeletorModelos();
-  montarSwatches();
-
-  const editor = document.getElementById('editor');
-  if (editor && !editor.value.trim()) editor.value = SAMPLE;
-
-  let deb;
-  editor.addEventListener('input', () => { clearTimeout(deb); deb = setTimeout(render, 300); });
 
   const fileInput = document.getElementById('file-input');
   if (fileInput) fileInput.addEventListener('change', handleFile);
@@ -146,9 +138,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const escala = document.getElementById('escala');
   if (escala) escala.addEventListener('input', (e) => { estado.escala = parseFloat(e.target.value) || 1; render(); });
 
-  aplicarModoUI();
-  render();
+  carregarTextoComoNotas(SAMPLE); // deixa um carrossel Notas de exemplo carregado atrás da home
+
+  document.getElementById('home-screen').style.display = 'block';
+  if (typeof carregarHome === 'function') carregarHome();
 });
+
+// Carrega um texto grande como um carrossel Notas (um card por bloco #N / linha em branco).
+function carregarTextoComoNotas(texto) {
+  estado.templateId = 'notas';
+  const sel = document.getElementById('model-select'); if (sel) sel.value = 'notas';
+  estado.format = TEMPLATES['notas'].formatos[0];
+  const blocos = dividirBlocos(texto);
+  const arr = blocos.length ? blocos : [''];
+  estado.cards = arr.map(b => ({ templateId: 'notas', fields: { texto: b, header: true } }));
+  estado.cardAtivo = 0;
+  const escSlider = document.getElementById('escala'); if (escSlider) escSlider.value = estado.escala;
+  aplicarModoUI();
+  montarSwatches();
+  render();
+}
 
 /* ── Controles ───────────────────────────────────────────────────────────── */
 
@@ -178,41 +187,37 @@ function montarSwatches() {
 
 function selecionarModelo(id) {
   estado.templateId = id;
-  const t = TEMPLATES[id];
-  estado.format = t.formatos[0];
+  estado.format = TEMPLATES[id].formatos[0];
   estado.escala = 1;
   const escSlider = document.getElementById('escala');
   if (escSlider) escSlider.value = 1;
   // "Modelo do post": cria o primeiro card ou aplica o modelo a todos os cards existentes.
-  if (id === 'notas') { estado.cards = []; estado.cardAtivo = 0; }
-  else if (!estado.cards.length) { estado.cards = [novoCard(id)]; estado.cardAtivo = 0; }
-  else { estado.cards.forEach(c => { c.templateId = id; c.fields = camposIniciais(TEMPLATES[id]); }); }
+  if (!estado.cards.length) estado.cards = [novoCard(id)];
+  else estado.cards.forEach(c => { c.templateId = id; c.fields = camposIniciais(TEMPLATES[id]); });
+  estado.cardAtivo = 0;
   aplicarModoUI();
   montarSwatches();
   render();
 }
 
-// Mostra textarea (notas) ou campos (modelos single); ajusta seletor de formato.
+// Todos os modelos são card-based: sempre mostra campos + navegação de cards + controles.
 function aplicarModoUI() {
-  const ehNotas = estado.templateId === 'notas';
-
-  document.getElementById('editor-wrap').style.display = ehNotas ? 'block' : 'none';
-  document.getElementById('fields-wrap').style.display = ehNotas ? 'none' : 'block';
-  document.getElementById('card-nav').style.display = ehNotas ? 'none' : 'flex';
-  document.getElementById('controles-arte').style.display = ehNotas ? 'none' : 'flex';
+  document.getElementById('fields-wrap').style.display = 'block';
+  document.getElementById('card-nav').style.display = 'flex';
+  document.getElementById('controles-arte').style.display = 'flex';
 
   const fmt = document.getElementById('format-select');
   fmt.innerHTML = '';
-  const formatos = ehNotas ? ['4:5'] : ['9:16', '1:1'];
-  formatos.forEach(f => {
+  ['9:16', '1:1', '4:5'].forEach(f => {
     const opt = document.createElement('option');
     opt.value = f;
-    opt.textContent = f === '9:16' ? '1080 x 1920 (Story)' : f === '1:1' ? '1080 x 1080 (Feed)' : f;
+    opt.textContent = f === '9:16' ? '1080 x 1920 (Story)' : f === '1:1' ? '1080 x 1080 (Feed)' : '1080 x 1350 (Retrato)';
     fmt.appendChild(opt);
   });
   fmt.value = estado.format;
 
-  if (!ehNotas) { montarCardNav(); montarCampos(TEMPLATES[cardAtual().templateId]); }
+  montarCardNav();
+  montarCampos(TEMPLATES[cardAtual().templateId]);
 }
 
 function montarCampos(t) {
@@ -305,13 +310,6 @@ function render() {
   const grid = document.getElementById('grid');
   const empty = document.getElementById('preview-empty');
   const bar = document.getElementById('download-bar');
-
-  if (estado.templateId === 'notas') {
-    grid.classList.remove('single');
-    renderNotas(grid, empty, bar);
-    return;
-  }
-
   renderCards(grid, empty, bar);
 }
 
@@ -337,18 +335,6 @@ function renderCards(grid, empty, bar) {
   bar.style.display = 'flex';
 }
 
-function renderNotas(grid, empty, bar) {
-  const raw = document.getElementById('editor').value.trim();
-  if (!raw) { currentSlides = []; grid.innerHTML = ''; grid.style.display = 'none'; bar.style.display = 'none'; empty.style.display = 'block'; return; }
-  currentSlides = parseCarousel(raw);
-  if (currentSlides.length === 0) { grid.innerHTML = ''; grid.style.display = 'none'; bar.style.display = 'none'; empty.style.display = 'block'; return; }
-  grid.innerHTML = '';
-  currentSlides.forEach((slide, i) => grid.appendChild(buildCardWrap(slide, i, downloadCard)));
-  empty.style.display = 'none';
-  grid.style.display = 'grid';
-  bar.style.display = 'flex';
-}
-
 function generateCarousel() { render(); }
 
 function statusApp(msg, tipo) {
@@ -360,13 +346,9 @@ function statusApp(msg, tipo) {
 
 /* ── Contagem / cor por card (compartilhado com storage.js) ──────────────── */
 
-function contagemCards() { return estado.templateId === 'notas' ? currentSlides.length : estado.cards.length; }
+function contagemCards() { return estado.cards.length; }
 
-function bgDoCard(index) {
-  const el = document.getElementById('card-' + index);
-  if (el && el.classList.contains('art-card')) return estado.bg || '#FFFFFF';
-  return currentSlides[index] && currentSlides[index].theme === 'blue' ? '#1B2D5B' : '#ffffff';
-}
+function bgDoCard(index) { return estado.bg || '#FFFFFF'; }
 
 /* ── Export PNG / JPG / ZIP ──────────────────────────────────────────────── */
 
@@ -435,49 +417,40 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 /* ── Estado salvo (Drive) ────────────────────────────────────────────────── */
 
 function obterEstadoJSON() {
-  if (estado.templateId === 'notas') {
-    return JSON.stringify({ v: 1, templateId: 'notas', texto: document.getElementById('editor').value });
-  }
   return JSON.stringify({ v: 2, templateId: estado.templateId, format: estado.format, bg: estado.bg, escala: estado.escala, cards: estado.cards });
 }
 
 function aplicarEstadoJSON(str) {
   let obj;
   try { obj = JSON.parse(str); } catch (e) { obj = null; }
-  if (!obj || !obj.templateId) { // compatível com registros antigos (texto puro do carrossel)
-    estado.templateId = 'notas';
-    document.getElementById('model-select').value = 'notas';
-    aplicarModoUI();
-    document.getElementById('editor').value = str || '';
-    render();
+  // Texto puro antigo -> vira um carrossel Notas (um card por bloco).
+  if (!obj || !obj.templateId) { carregarTextoComoNotas(typeof str === 'string' ? str : ''); return; }
+  // Save antigo do Notas (texto único) -> divide em cards Notas.
+  if (obj.templateId === 'notas' && typeof obj.texto === 'string') {
+    estado.bg = obj.bg || '#FFFFFF'; estado.escala = obj.escala || 1;
+    carregarTextoComoNotas(obj.texto);
     return;
   }
   estado.templateId = obj.templateId;
   document.getElementById('model-select').value = obj.templateId;
-  if (obj.templateId === 'notas') {
-    estado.cards = [];
-    aplicarModoUI();
-    document.getElementById('editor').value = obj.texto || '';
-  } else {
-    estado.format = obj.format || TEMPLATES[obj.templateId].formatos[0];
-    estado.bg = obj.bg || '#FFFFFF';
-    estado.escala = obj.escala || 1;
-    // v2 traz cards[]; registros antigos (v1) tinham 'fields' de um card só.
-    estado.cards = Array.isArray(obj.cards) ? obj.cards : [{ templateId: obj.templateId, fields: obj.fields || {} }];
-    estado.cardAtivo = 0;
-    const escSlider = document.getElementById('escala');
-    if (escSlider) escSlider.value = estado.escala;
-    aplicarModoUI();
-    montarSwatches();
-  }
+  estado.format = obj.format || TEMPLATES[obj.templateId].formatos[0];
+  estado.bg = obj.bg || '#FFFFFF';
+  estado.escala = obj.escala || 1;
+  // v2 traz cards[]; registros antigos (v1) tinham 'fields' de um card só.
+  estado.cards = Array.isArray(obj.cards) ? obj.cards : [{ templateId: obj.templateId, fields: obj.fields || {} }];
+  estado.cardAtivo = 0;
+  const escSlider = document.getElementById('escala');
+  if (escSlider) escSlider.value = estado.escala;
+  aplicarModoUI();
+  montarSwatches();
   render();
 }
 
 function nomeSugeridoAtual() {
   if (estado.nome) return estado.nome;
-  if (estado.templateId === 'notas') return nomeSugerido(document.getElementById('editor').value.trim());
   const f = f_() || {};
-  return (f.nome || f.titulo || f.kicker || 'Post').replace(/\s+/g, ' ').trim().slice(0, 50) || 'Post';
+  const base = f.texto || f.nome || f.titulo || f.kicker || 'Post';
+  return String(base).split('\n')[0].replace(/[*_=#]/g, '').replace(/\s+/g, ' ').trim().slice(0, 50) || 'Post';
 }
 
 /* ── Importar documento (.docx / .txt / .md) — alimenta o modelo Notas ───── */
@@ -494,13 +467,8 @@ function importarGDoc() {
     .then(r => r.json())
     .then(d => {
       if (!d.ok) { statusApp('Falha: ' + (d.erro || 'erro'), 'erro'); return; }
-      estado.templateId = 'notas';
-      document.getElementById('model-select').value = 'notas';
-      estado.cards = [];
-      aplicarModoUI();
-      document.getElementById('editor').value = d.texto || '';
-      render();
-      statusApp('Google Docs importado. Ajuste ou use "Colar copy" para virar cards.', 'ok');
+      carregarTextoComoNotas(d.texto || '');
+      statusApp('Google Docs importado como carrossel Notas.', 'ok');
     })
     .catch(e => statusApp('Falha: ' + e.message, 'erro'));
 }
@@ -519,10 +487,8 @@ async function handleFile(event) {
     } else {
       texto = await file.text();
     }
-    if (estado.templateId !== 'notas') { estado.templateId = 'notas'; document.getElementById('model-select').value = 'notas'; aplicarModoUI(); }
-    document.getElementById('editor').value = texto;
-    render();
-    statusApp('Importado: ' + file.name, 'ok');
+    carregarTextoComoNotas(texto);
+    statusApp('Importado como carrossel Notas: ' + file.name, 'ok');
   } catch (erro) {
     alert('Falha ao importar: ' + erro.message);
   }
@@ -567,8 +533,9 @@ function inlineToMarkup(el) {
 
 function clearEditor() {
   if (confirm('Limpar o editor?')) {
-    if (estado.templateId === 'notas') { document.getElementById('editor').value = ''; }
-    else { estado.cards = [novoCard(estado.templateId)]; estado.cardAtivo = 0; aplicarModoUI(); }
+    estado.cards = [novoCard(estado.templateId)];
+    estado.cardAtivo = 0;
+    aplicarModoUI();
     render();
     statusApp('');
   }
@@ -576,15 +543,23 @@ function clearEditor() {
 
 /* ── Tela inicial ────────────────────────────────────────────────────────── */
 
-function irParaHome() { document.getElementById('home-screen').style.display = 'flex'; }
+function irParaHome() {
+  document.getElementById('home-screen').style.display = 'block';
+  if (typeof carregarHome === 'function') carregarHome();
+}
 
 function criarNovoPost() {
-  const nome = window.prompt('Dê um nome para o post:', estado.nome || '');
+  const nome = window.prompt('Dê um nome para o post:', '');
   if (nome === null) return;
   estado.nome = nome.trim();
   carrosselAtualId = null; // post novo
+  estado.templateId = 'notas'; estado.format = '4:5'; estado.bg = '#FFFFFF'; estado.escala = 1;
+  estado.cards = [novoCard('notas')]; estado.cardAtivo = 0;
+  const sel = document.getElementById('model-select'); if (sel) sel.value = 'notas';
+  const esc = document.getElementById('escala'); if (esc) esc.value = 1;
+  aplicarModoUI(); montarSwatches(); render();
   document.getElementById('home-screen').style.display = 'none';
-  statusApp(estado.nome ? 'Novo post: "' + estado.nome + '". Salve para guardar no histórico.' : 'Dê um nome ao salvar.');
+  statusApp(estado.nome ? 'Novo post: "' + estado.nome + '".' : 'Dê um nome ao salvar.');
 }
 
 function openHelp() { document.getElementById('help-modal').style.display = 'flex'; }

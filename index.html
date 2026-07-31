@@ -7,23 +7,22 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Tela inicial -->
+  <!-- Tela inicial (painel) -->
   <div id="home-screen" class="home-screen">
-    <div class="home-card">
-      <div class="home-logo">4<span>creaty</span></div>
-      <p class="home-sub">Crie posts e carrosséis nos modelos validados da 4blue.</p>
-      <ol class="home-steps">
-        <li>Escolha um modelo (Carrossel, Twitter, Manchete...).</li>
-        <li>Escreva ou cole a copy — o preview aparece na hora.</li>
-        <li>Ajuste formato, cores, tamanho e imagens.</li>
-        <li>Baixe em PNG/JPG ou salve no seu histórico.</li>
-      </ol>
-      <div class="home-acoes">
-        <button class="btn-primary" onclick="criarNovoPost()">Criar novo post</button>
-        <button class="btn-secondary" onclick="abrirBiblioteca()">Meus posts</button>
-        <button class="btn-secondary" onclick="abrirAcervo()">Acervo</button>
+    <div class="home-shell">
+      <div class="home-top">
+        <div class="home-logo">4<span>creaty</span></div>
+        <div class="home-top-acoes">
+          <div id="home-conta" class="home-conta"></div>
+          <button class="btn-primary" onclick="criarNovoPost()">Criar novo post</button>
+        </div>
       </div>
-      <div id="home-conta" class="home-conta"></div>
+      <div class="home-tabs">
+        <button id="htab-meus" class="auth-tab ativo" onclick="mostrarHome('meus')">Meus posts</button>
+        <button id="htab-acervo" class="auth-tab" onclick="mostrarHome('acervo')">Acervo</button>
+        <select id="home-filtro-autor" class="card-modelo-select" style="display:none" onchange="renderHomeAcervo()"></select>
+      </div>
+      <div id="home-grid" class="home-grid"><div class="home-vazio">Carregando...</div></div>
     </div>
   </div>
 
@@ -72,16 +71,10 @@
 
         <div id="emoji-picker" class="emoji-picker" style="display:none"></div>
 
-        <!-- Navegação de cards (modelos de card único, multi-card) -->
+        <!-- Navegação de cards (add/duplicar/navegar + modelo por card) -->
         <div id="card-nav" class="card-nav" style="display:none"></div>
 
-        <!-- Entrada do modelo Notas (texto marcado) -->
-        <div id="editor-wrap">
-          <textarea id="editor" placeholder="Cole a copy do carrossel. O preview aparece na hora.
-Separe os cards com uma linha em branco (ou use #1, #2...)."></textarea>
-        </div>
-
-        <!-- Entrada dos modelos de card único (campos) -->
+        <!-- Campos do card selecionado -->
         <div id="fields-wrap" style="display:none"></div>
 
         <div id="status-app" class="status-linha"></div>
@@ -234,5 +227,6 @@ Segundo card"></textarea>
   <script src="auth.js"></script>
   <script src="emojis.js"></script>
   <script src="bulk.js"></script>
+  <script src="home.js"></script>
 </body>
 </html>
