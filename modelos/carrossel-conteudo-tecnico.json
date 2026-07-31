@@ -5,7 +5,7 @@
   "formato": "carrossel",
   "dimensoes": { "largura": 1080, "altura": 1920, "zona_segura": 1080 },
   "paginas": 5,
-  "paletas_permitidas": ["azul-corporativo", "laranja-criativo"],
+  "paletas_permitidas": ["4blue-escuro", "4blue-azul", "4blue-claro"],
   "campos": [
     { "id": "titulo", "rotulo": "Título da capa", "pagina": 1, "tipo": "texto", "limite": 40, "obrigatorio": true },
     { "id": "subtitulo", "rotulo": "Subtítulo da capa", "pagina": 1, "tipo": "texto", "limite": 60, "obrigatorio": false },

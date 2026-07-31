@@ -9,7 +9,7 @@
 
 // URL do Web App do Google Apps Script (F3) — guia em apps-script/INSTALACAO.md.
 // Vazio = botão de envio oculto e busca de imagens desativada (URL colada à mão).
-const CONFIG = { apps_script_url: "https://script.google.com/macros/s/AKfycbxSTAP-r-TKvwW9pxR5-ro4Soz5A24qb4bePn7_O8VYftFWI9aVL-Ztf_qQMrx9v6Jz/exec" };
+const CONFIG = { apps_script_url: "" };
 
 const estado = {
   paletas: {},        // token -> { nome, clima, hex: { primaria, fundo, texto } }

@@ -1,15 +1,20 @@
 {
-  "observacao": "Tokens de direção de arte. Hex ilustrativos — substituir pelos oficiais da 4blue (docs/04).",
+  "observacao": "Cores oficiais 4blue (docs/08). O 6º hex informado (#053025A) é inválido e ficou de fora até confirmação. Papéis completos de cor no Brand Kit (docs/08).",
   "paletas": {
-    "azul-corporativo": {
-      "nome": "Azul Corporativo",
-      "clima": "Institucional, técnico",
-      "hex": { "primaria": "#1B4FD8", "fundo": "#0B1B3F", "texto": "#FFFFFF" }
+    "4blue-escuro": {
+      "nome": "4blue Escuro",
+      "clima": "Institucional (padrão)",
+      "hex": { "primaria": "#F8B90C", "fundo": "#011527", "texto": "#F1F3F9" }
     },
-    "laranja-criativo": {
-      "nome": "Laranja Criativo",
-      "clima": "Leve, provocativo",
-      "hex": { "primaria": "#FF7A1A", "fundo": "#FFF4EC", "texto": "#1A1A1A" }
+    "4blue-azul": {
+      "nome": "4blue Azul",
+      "clima": "Destaque tecnológico",
+      "hex": { "primaria": "#0368B1", "fundo": "#051F38", "texto": "#F1F3F9" }
+    },
+    "4blue-claro": {
+      "nome": "4blue Claro",
+      "clima": "Fundo claro",
+      "hex": { "primaria": "#F8B90C", "fundo": "#F1F3F9", "texto": "#011527" }
     }
   }
 }
