@@ -1,10 +1,9 @@
 /**
  * storage.js — Persistência no Drive (Google Sheets + Apps Script).
- * Um registro = um carrossel (nome, autor, data, texto). Publicar envia os PNGs
- * para uma pasta compartilhada no Drive.
+ * Salva o ESTADO completo do post (modelo, formato, cor, campos ou texto) como
+ * JSON na coluna "texto" da planilha. Publicar envia os PNGs para o Drive.
  */
 
-// URL /exec do Web App publicado (conta 4blue).
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSTAP-r-TKvwW9pxR5-ro4Soz5A24qb4bePn7_O8VYftFWI9aVL-Ztf_qQMrx9v6Jz/exec";
 
 let carrosselAtualId = null;
@@ -17,10 +16,7 @@ function setStatus(msg, tipo) {
 }
 
 function semBackend() {
-  if (!APPS_SCRIPT_URL) {
-    setStatus("Configure a URL do Apps Script em storage.js para usar o Drive.", "erro");
-    return true;
-  }
+  if (!APPS_SCRIPT_URL) { setStatus("Configure a URL do Apps Script em storage.js.", "erro"); return true; }
   return false;
 }
 
@@ -28,35 +24,37 @@ function semBackend() {
 
 async function salvarCarrossel() {
   if (semBackend()) return;
-  const texto = document.getElementById("editor").value.trim();
-  if (!texto) { setStatus("Nada para salvar — o editor está vazio.", "erro"); return; }
-
-  const sugestao = nomeSugerido(texto);
-  const nome = window.prompt("Nome do carrossel:", sugestao);
+  if (!tokenAtual()) { setStatus("Entre na sua conta para salvar.", "erro"); if (typeof abrirLogin === "function") abrirLogin(); return; }
+  if (typeof contagemCards === "function" && contagemCards() === 0) {
+    setStatus("Nada para salvar — preencha o conteúdo primeiro.", "erro");
+    return;
+  }
+  const sugestao = typeof nomeSugeridoAtual === "function" ? nomeSugeridoAtual() : "Post";
+  const nome = window.prompt("Nome do post:", sugestao);
   if (nome === null) return;
+
+  const texto = typeof obterEstadoJSON === "function"
+    ? obterEstadoJSON()
+    : document.getElementById("editor").value;
 
   setStatus("Salvando no Drive...");
   try {
     const resposta = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ acao: "salvar", id: carrosselAtualId, nome: nome.trim() || sugestao, autor: "", texto })
+      body: JSON.stringify({ acao: "salvar", token: tokenAtual(), id: carrosselAtualId, nome: nome.trim() || sugestao, texto })
     });
     const dados = await resposta.json();
-    if (dados.ok) {
-      carrosselAtualId = dados.id;
-      setStatus('Salvo como "' + (nome.trim() || sugestao) + '".', "ok");
-    } else {
-      setStatus("Falha ao salvar: " + (dados.erro || "erro desconhecido"), "erro");
-    }
+    if (dados.ok) { carrosselAtualId = dados.id; setStatus('Salvo como "' + (nome.trim() || sugestao) + '".', "ok"); }
+    else setStatus("Falha ao salvar: " + (dados.erro || "erro desconhecido"), "erro");
   } catch (erro) {
-    setStatus("Falha ao salvar: " + erro.message, "erro");
+    setStatus("Falha ao salvar: " + erro.message + " (confira o passo a passo em apps-script/DIAGNOSTICO-PLANILHA.md)", "erro");
   }
 }
 
+// Sugere nome pela primeira linha significativa (modelo Notas).
 function nomeSugerido(texto) {
-  const linha = texto.split("\n").map(l => l.trim())
-    .find(l => l && !/^#\d+/.test(l) && !/^---/.test(l));
+  const linha = (texto || "").split("\n").map(l => l.trim()).find(l => l && !/^#\d+/.test(l) && !/^---/.test(l));
   const limpo = (linha || "Carrossel").replace(/[*_=#]/g, "").trim().slice(0, 50);
   return limpo || "Carrossel";
 }
@@ -65,23 +63,13 @@ function nomeSugerido(texto) {
 
 async function publicarNoDrive() {
   if (semBackend()) return;
-  if (!Array.isArray(currentSlides) || currentSlides.length === 0) {
-    setStatus("Gere o carrossel antes de publicar no Drive.", "erro");
-    return;
-  }
+  if (typeof contagemCards !== "function" || contagemCards() === 0) { setStatus("Gere o conteúdo antes de publicar.", "erro"); return; }
 
-  setStatus("Renderizando os cards e enviando ao Drive... pode levar alguns segundos.");
+  setStatus("Renderizando e enviando ao Drive... pode levar alguns segundos.");
   try {
-    const imagens = [];
-    for (let i = 0; i < currentSlides.length; i++) {
-      const el = document.getElementById("card-" + i);
-      if (!el) continue;
-      const bg = currentSlides[i].theme === "blue" ? "#1B2D5B" : "#ffffff";
-      const canvas = await html2canvas(el, { scale: 4, useCORS: true, backgroundColor: bg, width: el.offsetWidth, height: el.offsetHeight });
-      imagens.push({ card: i + 1, dataUrl: canvas.toDataURL("image/png") });
-    }
-
-    const nome = nomeSugerido(document.getElementById("editor").value.trim());
+    const imagens = await capturarCards();
+    if (!imagens.length) { setStatus("Nada para publicar.", "erro"); return; }
+    const nome = typeof nomeSugeridoAtual === "function" ? nomeSugeridoAtual() : "Post";
     const resposta = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -105,24 +93,27 @@ async function publicarNoDrive() {
 
 async function abrirBiblioteca() {
   if (semBackend()) return;
+  if (!tokenAtual()) { if (typeof abrirLogin === "function") abrirLogin(); return; }
   document.getElementById("open-modal").style.display = "flex";
   const lista = document.getElementById("saved-list");
   lista.innerHTML = '<div class="saved-vazio">Carregando...</div>';
   try {
-    const resposta = await fetch(APPS_SCRIPT_URL + "?acao=listar");
+    const resposta = await fetch(APPS_SCRIPT_URL + "?acao=listar&token=" + encodeURIComponent(tokenAtual()));
     const dados = await resposta.json();
     if (!dados.ok || !dados.itens || dados.itens.length === 0) {
-      lista.innerHTML = '<div class="saved-vazio">Nenhum carrossel salvo ainda.</div>';
+      lista.innerHTML = '<div class="saved-vazio">Nenhum post salvo ainda.</div>';
       return;
     }
     lista.innerHTML = "";
     for (const item of dados.itens) {
       const div = document.createElement("div");
       div.className = "saved-item";
-      div.innerHTML = '<div><div class="s-nome"></div><div class="s-meta"></div></div><span class="btn-dl" style="width:auto">Abrir</span>';
+      div.innerHTML = '<div class="s-info"><div class="s-nome"></div><div class="s-meta"></div></div>' +
+        '<div class="s-acoes"><span class="btn-dl s-abrir">Abrir</span><span class="btn-dl s-dup">Duplicar</span></div>';
       div.querySelector(".s-nome").textContent = item.nome;
       div.querySelector(".s-meta").textContent = formatarData(item.atualizado_em);
-      div.addEventListener("click", () => abrirCarrossel(item.id));
+      div.querySelector(".s-abrir").addEventListener("click", (e) => { e.stopPropagation(); abrirCarrossel(item.id, false); });
+      div.querySelector(".s-dup").addEventListener("click", (e) => { e.stopPropagation(); abrirCarrossel(item.id, true); });
       lista.appendChild(div);
     }
   } catch (erro) {
@@ -130,17 +121,18 @@ async function abrirBiblioteca() {
   }
 }
 
-async function abrirCarrossel(id) {
+async function abrirCarrossel(id, duplicar) {
   setStatus("Abrindo...");
   try {
-    const resposta = await fetch(APPS_SCRIPT_URL + "?acao=abrir&id=" + encodeURIComponent(id));
+    const resposta = await fetch(APPS_SCRIPT_URL + "?acao=abrir&id=" + encodeURIComponent(id) + "&token=" + encodeURIComponent(tokenAtual()));
     const dados = await resposta.json();
     if (!dados.ok || !dados.item) { setStatus("Não encontrado.", "erro"); return; }
-    document.getElementById("editor").value = dados.item.texto || "";
-    carrosselAtualId = dados.item.id;
+    carrosselAtualId = duplicar ? null : dados.item.id;
     fecharBiblioteca();
-    if (typeof renderFromEditor === "function") renderFromEditor(true);
-    setStatus('Aberto: "' + dados.item.nome + '".', "ok");
+    if (typeof aplicarEstadoJSON === "function") aplicarEstadoJSON(dados.item.texto || "");
+    setStatus(duplicar
+      ? 'Cópia de "' + dados.item.nome + '" carregada — salve para criar o novo.'
+      : 'Aberto: "' + dados.item.nome + '".', "ok");
   } catch (erro) {
     setStatus("Falha ao abrir: " + erro.message, "erro");
   }
