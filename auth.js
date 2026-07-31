@@ -18,12 +18,14 @@ function setSessao(s) {
 function escapaTxt(t) { const d = document.createElement("div"); d.textContent = String(t); return d.innerHTML; }
 
 function atualizarConta() {
-  const area = document.getElementById("conta-area");
-  if (!area) return;
   const s = sessao();
-  area.innerHTML = s
+  const html = s
     ? '<span class="conta-nome">' + escapaTxt(s.nome) + '</span><button class="btn-secondary" onclick="sair()">Sair</button>'
     : '<button class="btn-secondary" onclick="abrirLogin()">Entrar</button>';
+  const area = document.getElementById("conta-area");
+  if (area) area.innerHTML = html;
+  const home = document.getElementById("home-conta");
+  if (home) home.innerHTML = s ? ('Logado como ' + escapaTxt(s.nome)) : html;
 }
 
 /* ── Modal ───────────────────────────────────────────────────────────────── */

@@ -6,7 +6,113 @@
  */
 
 let currentSlides = [];
-const estado = { templateId: 'notas', format: '4:5', bg: '#FFFFFF', escala: 1, fields: {} };
+const estado = { templateId: 'notas', format: '4:5', bg: '#FFFFFF', escala: 1, nome: '', fields: {}, cards: [], cardAtivo: 0 };
+
+/* ── Cards (multi-card nos modelos de campo) ─────────────────────────────── */
+
+function camposIniciais(t) {
+  const f = {};
+  (t.campos || []).forEach(c => {
+    if (c.tipo === 'check') f[c.id] = c.valorPadrao !== false;
+    else if (c.tipo === 'image') f[c.id] = '';
+    else f[c.id] = c.placeholder || '';
+  });
+  return f;
+}
+function novoCard(templateId) { return { templateId, fields: camposIniciais(TEMPLATES[templateId]) }; }
+function cardAtual() { return estado.cards[estado.cardAtivo]; }
+// Campos "ativos": do card selecionado (modelos de campo) ou o objeto do notas.
+function f_() { return estado.templateId === 'notas' ? estado.fields : (cardAtual() ? cardAtual().fields : {}); }
+
+function selecionarCard(i) { if (i < 0 || i >= estado.cards.length) return; estado.cardAtivo = i; aplicarModoUI(); render(); }
+function adicionarCard() { estado.cards.push(novoCard(cardAtual() ? cardAtual().templateId : estado.templateId)); estado.cardAtivo = estado.cards.length - 1; aplicarModoUI(); render(); }
+function trocarModeloDoCard(newId) {
+  const c = cardAtual();
+  if (!c || c.templateId === newId) return;
+  c.templateId = newId;
+  c.fields = camposIniciais(TEMPLATES[newId]); // campos do novo modelo (com exemplo)
+  aplicarModoUI();
+  render();
+}
+
+/* ── Colar copy e dividir em cards (a copy chega como texto marcado) ─────── */
+
+function abrirColar() { document.getElementById('colar-modal').style.display = 'flex'; }
+function fecharColar(ev) { if (!ev || ev.target === document.getElementById('colar-modal')) document.getElementById('colar-modal').style.display = 'none'; }
+
+// Divide o texto em blocos: por #1/#2... ou, se não houver, por linha em branco.
+function dividirBlocos(texto) {
+  if (/^#\d+/m.test(texto)) {
+    const partes = []; let cur = null;
+    texto.split('\n').forEach(l => {
+      if (/^#\d+/.test(l.trim())) { if (cur != null) partes.push(cur.trim()); cur = ''; }
+      else if (cur != null) { cur += l + '\n'; }
+    });
+    if (cur != null) partes.push(cur.trim());
+    return partes.filter(p => p !== '');
+  }
+  return texto.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+}
+
+function aplicarColar() {
+  const texto = document.getElementById('colar-texto').value;
+  const blocos = dividirBlocos(texto);
+  if (!blocos.length) { statusApp('Nada para dividir.', 'erro'); return; }
+  const modelo = estado.templateId === 'notas' ? 'twitter' : estado.templateId;
+  const t = TEMPLATES[modelo];
+  const principal = (t.campos.find(c => c.principal) || {}).id;
+  estado.templateId = modelo;
+  document.getElementById('model-select').value = modelo;
+  estado.cards = blocos.map(b => {
+    const f = camposIniciais(t);
+    if (principal) f[principal] = b;
+    return { templateId: modelo, fields: f };
+  });
+  estado.cardAtivo = 0;
+  fecharColar();
+  aplicarModoUI();
+  montarSwatches();
+  render();
+  statusApp(blocos.length + ' card(s) criados a partir da copy.', 'ok');
+}
+function duplicarCard() {
+  const c = cardAtual();
+  estado.cards.splice(estado.cardAtivo + 1, 0, { templateId: c.templateId, fields: JSON.parse(JSON.stringify(c.fields)) });
+  estado.cardAtivo++; aplicarModoUI(); render();
+}
+function removerCard() {
+  if (estado.cards.length <= 1) return;
+  estado.cards.splice(estado.cardAtivo, 1);
+  estado.cardAtivo = Math.max(0, estado.cardAtivo - 1);
+  aplicarModoUI(); render();
+}
+
+function montarCardNav() {
+  const nav = document.getElementById('card-nav');
+  nav.innerHTML = '';
+  const info = document.createElement('span');
+  info.className = 'card-nav-info';
+  info.textContent = 'Card ' + (estado.cardAtivo + 1) + ' de ' + estado.cards.length;
+  nav.appendChild(info);
+  const mk = (txt, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-secondary'; b.textContent = txt; b.addEventListener('click', fn); return b; };
+  nav.appendChild(mk('‹', () => selecionarCard(estado.cardAtivo - 1)));
+  nav.appendChild(mk('›', () => selecionarCard(estado.cardAtivo + 1)));
+  nav.appendChild(mk('Adicionar', adicionarCard));
+  nav.appendChild(mk('Duplicar', duplicarCard));
+  nav.appendChild(mk('Colar copy', abrirColar));
+  if (estado.cards.length > 1) nav.appendChild(mk('Remover', removerCard));
+
+  // Seletor de modelo DESTE card (post misto).
+  const sel = document.createElement('select');
+  sel.className = 'card-modelo-select';
+  sel.title = 'Modelo deste card';
+  Object.values(TEMPLATES).filter(t => t.tipo === 'single').forEach(t => {
+    const o = document.createElement('option'); o.value = t.id; o.textContent = t.nome; sel.appendChild(o);
+  });
+  sel.value = cardAtual().templateId;
+  sel.addEventListener('change', () => trocarModeloDoCard(sel.value));
+  nav.appendChild(sel);
+}
 
 const SAMPLE = `#1
 **Pare de perder tempo com post que não vende**
@@ -77,16 +183,10 @@ function selecionarModelo(id) {
   estado.escala = 1;
   const escSlider = document.getElementById('escala');
   if (escSlider) escSlider.value = 1;
-  // Inicializa os campos com os exemplos, para o modelo já aparecer desenhado.
-  estado.fields = {};
-  if (t.campos) {
-    t.campos.forEach(c => {
-      if (c.tipo === 'check') estado.fields[c.id] = c.valorPadrao !== false;
-      else if (c.tipo === 'image') estado.fields[c.id] = '';
-      else estado.fields[c.id] = c.placeholder || '';
-    });
-  }
-  if (id !== 'notas' && (estado.bg === '#FFFFFF' || !estado.bg)) estado.bg = '#FFFFFF';
+  // "Modelo do post": cria o primeiro card ou aplica o modelo a todos os cards existentes.
+  if (id === 'notas') { estado.cards = []; estado.cardAtivo = 0; }
+  else if (!estado.cards.length) { estado.cards = [novoCard(id)]; estado.cardAtivo = 0; }
+  else { estado.cards.forEach(c => { c.templateId = id; c.fields = camposIniciais(TEMPLATES[id]); }); }
   aplicarModoUI();
   montarSwatches();
   render();
@@ -94,16 +194,17 @@ function selecionarModelo(id) {
 
 // Mostra textarea (notas) ou campos (modelos single); ajusta seletor de formato.
 function aplicarModoUI() {
-  const t = TEMPLATES[estado.templateId];
   const ehNotas = estado.templateId === 'notas';
 
   document.getElementById('editor-wrap').style.display = ehNotas ? 'block' : 'none';
   document.getElementById('fields-wrap').style.display = ehNotas ? 'none' : 'block';
+  document.getElementById('card-nav').style.display = ehNotas ? 'none' : 'flex';
   document.getElementById('controles-arte').style.display = ehNotas ? 'none' : 'flex';
 
   const fmt = document.getElementById('format-select');
   fmt.innerHTML = '';
-  t.formatos.forEach(f => {
+  const formatos = ehNotas ? ['4:5'] : ['9:16', '1:1'];
+  formatos.forEach(f => {
     const opt = document.createElement('option');
     opt.value = f;
     opt.textContent = f === '9:16' ? '1080 x 1920 (Story)' : f === '1:1' ? '1080 x 1080 (Feed)' : f;
@@ -111,11 +212,12 @@ function aplicarModoUI() {
   });
   fmt.value = estado.format;
 
-  if (!ehNotas) montarCampos(t);
+  if (!ehNotas) { montarCardNav(); montarCampos(TEMPLATES[cardAtual().templateId]); }
 }
 
 function montarCampos(t) {
   const box = document.getElementById('fields-wrap');
+  const alvo = f_();
   box.innerHTML = '';
   t.campos.forEach(c => {
     const wrap = document.createElement('div');
@@ -127,16 +229,16 @@ function montarCampos(t) {
 
     if (c.tipo === 'textarea') {
       const ta = document.createElement('textarea');
-      ta.id = 'campo_' + c.id; ta.rows = 3; ta.value = estado.fields[c.id] || '';
+      ta.id = 'campo_' + c.id; ta.rows = 3; ta.value = alvo[c.id] || '';
       let deb;
-      ta.addEventListener('input', () => { estado.fields[c.id] = ta.value; clearTimeout(deb); deb = setTimeout(render, 200); });
+      ta.addEventListener('input', () => { alvo[c.id] = ta.value; clearTimeout(deb); deb = setTimeout(render, 200); });
       wrap.appendChild(ta);
     } else if (c.tipo === 'image') {
       const inp = document.createElement('input');
       inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'campo_' + c.id;
       inp.addEventListener('change', (e) => lerImagem(e, c.id, c.bg, t));
       wrap.appendChild(inp);
-      const val = estado.fields[c.id];
+      const val = alvo[c.id];
       if (val && val.src) {
         wrap.appendChild(sliderImg('Zoom', c.id, 'zoom', 0.5, 2.5, 0.05));
         wrap.appendChild(sliderImg('Horizontal', c.id, 'x', -50, 50, 1));
@@ -144,20 +246,20 @@ function montarCampos(t) {
         if (c.bg) wrap.appendChild(sliderImg('Escurecer', c.id, 'overlay', 0, 0.8, 0.05));
         const rm = document.createElement('button');
         rm.type = 'button'; rm.className = 'btn-secondary'; rm.textContent = 'Remover imagem';
-        rm.addEventListener('click', () => { delete estado.fields[c.id]; montarCampos(t); render(); });
+        rm.addEventListener('click', () => { delete alvo[c.id]; montarCampos(t); render(); });
         wrap.appendChild(rm);
       }
     } else if (c.tipo === 'check') {
       const cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.id = 'campo_' + c.id; cb.checked = estado.fields[c.id] !== false;
-      cb.addEventListener('change', () => { estado.fields[c.id] = cb.checked; render(); });
+      cb.type = 'checkbox'; cb.id = 'campo_' + c.id; cb.checked = alvo[c.id] !== false;
+      cb.addEventListener('change', () => { alvo[c.id] = cb.checked; render(); });
       lab.style.display = 'inline'; lab.style.marginLeft = '6px';
       wrap.innerHTML = ''; wrap.appendChild(cb); wrap.appendChild(lab);
     } else {
       const inp = document.createElement('input');
-      inp.type = 'text'; inp.id = 'campo_' + c.id; inp.value = estado.fields[c.id] || '';
+      inp.type = 'text'; inp.id = 'campo_' + c.id; inp.value = alvo[c.id] || '';
       let deb;
-      inp.addEventListener('input', () => { estado.fields[c.id] = inp.value; clearTimeout(deb); deb = setTimeout(render, 200); });
+      inp.addEventListener('input', () => { alvo[c.id] = inp.value; clearTimeout(deb); deb = setTimeout(render, 200); });
       wrap.appendChild(inp);
     }
     box.appendChild(wrap);
@@ -169,7 +271,7 @@ function lerImagem(event, campoId, bg, t) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    estado.fields[campoId] = { src: reader.result, zoom: 1, x: 0, y: 0, overlay: bg ? 0.35 : 0 };
+    f_()[campoId] = { src: reader.result, zoom: 1, x: 0, y: 0, overlay: bg ? 0.35 : 0 };
     if (t) montarCampos(t);
     render();
   };
@@ -185,12 +287,12 @@ function sliderImg(label, campoId, prop, min, max, step) {
   w.appendChild(l);
   const r = document.createElement('input');
   r.type = 'range'; r.min = min; r.max = max; r.step = step;
-  const obj = estado.fields[campoId] || {};
+  const obj = f_()[campoId] || {};
   r.value = obj[prop] != null ? obj[prop] : (prop === 'zoom' ? 1 : prop === 'overlay' ? 0.35 : 0);
   let deb;
   r.addEventListener('input', () => {
-    if (!estado.fields[campoId]) estado.fields[campoId] = {};
-    estado.fields[campoId][prop] = parseFloat(r.value);
+    if (!f_()[campoId]) f_()[campoId] = {};
+    f_()[campoId][prop] = parseFloat(r.value);
     clearTimeout(deb); deb = setTimeout(render, 120);
   });
   w.appendChild(r);
@@ -210,14 +312,28 @@ function render() {
     return;
   }
 
-  grid.classList.add('single');
+  renderCards(grid, empty, bar);
+}
+
+function renderCards(grid, empty, bar) {
+  grid.classList.remove('single');
   grid.innerHTML = '';
-  const wrap = document.createElement('div');
-  wrap.className = 'card-wrap';
-  wrap.appendChild(TEMPLATES[estado.templateId].render(estado));
-  grid.appendChild(wrap);
+  estado.cards.forEach((card, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap' + (i === estado.cardAtivo ? ' ativo' : '');
+    const label = document.createElement('div');
+    label.className = 'card-label';
+    label.textContent = 'Card ' + (i + 1);
+    wrap.appendChild(label);
+    const st = { templateId: card.templateId, format: estado.format, bg: estado.bg, escala: estado.escala, fields: card.fields };
+    const el = TEMPLATES[card.templateId].render(st);
+    el.id = 'card-' + i;
+    wrap.appendChild(el);
+    wrap.addEventListener('click', () => { if (estado.cardAtivo !== i) { estado.cardAtivo = i; aplicarModoUI(); render(); } });
+    grid.appendChild(wrap);
+  });
   empty.style.display = 'none';
-  grid.style.display = 'flex';
+  grid.style.display = 'grid';
   bar.style.display = 'flex';
 }
 
@@ -244,7 +360,7 @@ function statusApp(msg, tipo) {
 
 /* ── Contagem / cor por card (compartilhado com storage.js) ──────────────── */
 
-function contagemCards() { return estado.templateId === 'notas' ? currentSlides.length : 1; }
+function contagemCards() { return estado.templateId === 'notas' ? currentSlides.length : estado.cards.length; }
 
 function bgDoCard(index) {
   const el = document.getElementById('card-' + index);
@@ -322,7 +438,7 @@ function obterEstadoJSON() {
   if (estado.templateId === 'notas') {
     return JSON.stringify({ v: 1, templateId: 'notas', texto: document.getElementById('editor').value });
   }
-  return JSON.stringify({ v: 1, templateId: estado.templateId, format: estado.format, bg: estado.bg, escala: estado.escala, fields: estado.fields });
+  return JSON.stringify({ v: 2, templateId: estado.templateId, format: estado.format, bg: estado.bg, escala: estado.escala, cards: estado.cards });
 }
 
 function aplicarEstadoJSON(str) {
@@ -339,13 +455,16 @@ function aplicarEstadoJSON(str) {
   estado.templateId = obj.templateId;
   document.getElementById('model-select').value = obj.templateId;
   if (obj.templateId === 'notas') {
+    estado.cards = [];
     aplicarModoUI();
     document.getElementById('editor').value = obj.texto || '';
   } else {
     estado.format = obj.format || TEMPLATES[obj.templateId].formatos[0];
     estado.bg = obj.bg || '#FFFFFF';
     estado.escala = obj.escala || 1;
-    estado.fields = obj.fields || {};
+    // v2 traz cards[]; registros antigos (v1) tinham 'fields' de um card só.
+    estado.cards = Array.isArray(obj.cards) ? obj.cards : [{ templateId: obj.templateId, fields: obj.fields || {} }];
+    estado.cardAtivo = 0;
     const escSlider = document.getElementById('escala');
     if (escSlider) escSlider.value = estado.escala;
     aplicarModoUI();
@@ -355,12 +474,36 @@ function aplicarEstadoJSON(str) {
 }
 
 function nomeSugeridoAtual() {
+  if (estado.nome) return estado.nome;
   if (estado.templateId === 'notas') return nomeSugerido(document.getElementById('editor').value.trim());
-  const f = estado.fields || {};
+  const f = f_() || {};
   return (f.nome || f.titulo || f.kicker || 'Post').replace(/\s+/g, ' ').trim().slice(0, 50) || 'Post';
 }
 
 /* ── Importar documento (.docx / .txt / .md) — alimenta o modelo Notas ───── */
+
+// Importa a copy de um Google Docs (via Apps Script). Cai no modelo Notas.
+function importarGDoc() {
+  if (typeof tokenAtual === 'function' && !tokenAtual()) { statusApp('Entre na sua conta para importar do Google Docs.', 'erro'); if (typeof abrirLogin === 'function') abrirLogin(); return; }
+  const url = window.prompt('Cole o link do Google Docs (compartilhado com a conta do sistema):', '');
+  if (!url) return;
+  const m = String(url).match(/\/d\/([a-zA-Z0-9_-]+)/);
+  const id = m ? m[1] : String(url).trim();
+  statusApp('Lendo o Google Docs...');
+  fetch(APPS_SCRIPT_URL + '?acao=gdoc&id=' + encodeURIComponent(id) + '&token=' + encodeURIComponent(tokenAtual()))
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) { statusApp('Falha: ' + (d.erro || 'erro'), 'erro'); return; }
+      estado.templateId = 'notas';
+      document.getElementById('model-select').value = 'notas';
+      estado.cards = [];
+      aplicarModoUI();
+      document.getElementById('editor').value = d.texto || '';
+      render();
+      statusApp('Google Docs importado. Ajuste ou use "Colar copy" para virar cards.', 'ok');
+    })
+    .catch(e => statusApp('Falha: ' + e.message, 'erro'));
+}
 
 async function handleFile(event) {
   const file = event.target.files && event.target.files[0];
@@ -425,10 +568,23 @@ function inlineToMarkup(el) {
 function clearEditor() {
   if (confirm('Limpar o editor?')) {
     if (estado.templateId === 'notas') { document.getElementById('editor').value = ''; }
-    else { const t = TEMPLATES[estado.templateId]; estado.fields = {}; if (t.campos) montarCampos(t); }
+    else { estado.cards = [novoCard(estado.templateId)]; estado.cardAtivo = 0; aplicarModoUI(); }
     render();
     statusApp('');
   }
+}
+
+/* ── Tela inicial ────────────────────────────────────────────────────────── */
+
+function irParaHome() { document.getElementById('home-screen').style.display = 'flex'; }
+
+function criarNovoPost() {
+  const nome = window.prompt('Dê um nome para o post:', estado.nome || '');
+  if (nome === null) return;
+  estado.nome = nome.trim();
+  carrosselAtualId = null; // post novo
+  document.getElementById('home-screen').style.display = 'none';
+  statusApp(estado.nome ? 'Novo post: "' + estado.nome + '". Salve para guardar no histórico.' : 'Dê um nome ao salvar.');
 }
 
 function openHelp() { document.getElementById('help-modal').style.display = 'flex'; }

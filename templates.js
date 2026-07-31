@@ -22,7 +22,7 @@ const TEMPLATES = {
       { id: 'user', label: '@ do perfil', tipo: 'text', placeholder: '@renankaminski' },
       { id: 'foto', label: 'Foto de perfil', tipo: 'image' },
       { id: 'verificado', label: 'Selo verificado (azul)', tipo: 'check', valorPadrao: true },
-      { id: 'texto', label: 'Texto do post', tipo: 'textarea', placeholder: 'Depois de 15 anos eu finalmente consegui criar o melhor treinamento que existe para donos de empresas' }
+      { id: 'texto', label: 'Texto do post', tipo: 'textarea', principal: true, placeholder: 'Depois de 15 anos eu finalmente consegui criar o melhor treinamento que existe para donos de empresas' }
     ],
     render: renderTwitter
   },
@@ -31,7 +31,7 @@ const TEMPLATES = {
     formatos: ['9:16', '1:1'],
     campos: [
       { id: 'kicker', label: 'Faixa (vermelho)', tipo: 'text', placeholder: 'Pare de focar apenas em vender mais' },
-      { id: 'titulo', label: 'Título grande', tipo: 'textarea', placeholder: 'COMECE A FOCAR\nNO LUCRO' },
+      { id: 'titulo', label: 'Título grande', tipo: 'textarea', principal: true, placeholder: 'COMECE A FOCAR\nNO LUCRO' },
       { id: 'subtitulo', label: 'Subtítulo', tipo: 'textarea', placeholder: 'Descubra como aumentar sua lucratividade através de pura eficiência operacional.' },
       { id: 'imagem', label: 'Imagem de fundo (opcional)', tipo: 'image', bg: true }
     ],
@@ -41,7 +41,7 @@ const TEMPLATES = {
     id: 'mancheteB', nome: 'Manchete (título + destaque)', tipo: 'single',
     formatos: ['9:16', '1:1'],
     campos: [
-      { id: 'titulo', label: 'Linha 1', tipo: 'text', placeholder: 'Quem joga como amador,' },
+      { id: 'titulo', label: 'Linha 1', tipo: 'text', principal: true, placeholder: 'Quem joga como amador,' },
       { id: 'destaque', label: 'Destaque (vermelho)', tipo: 'text', placeholder: 'COLHE RESULTADOS DE AMADOR' },
       { id: 'subtitulo', label: 'Subtítulo', tipo: 'textarea', placeholder: 'Pare de improvisar a gestão do seu negócio. Tenha método, técnica e previsibilidade de caixa.' },
       { id: 'imagem', label: 'Imagem de fundo (opcional)', tipo: 'image', bg: true }
@@ -51,7 +51,7 @@ const TEMPLATES = {
 };
 
 /* ── Cores de fundo disponíveis (RF: mais opções + fundo escuro) ─────────── */
-const CORES_FUNDO = ['#FFFFFF', '#F1F3F9', '#011527', '#051F38', '#1B2D5B', '#111111'];
+const CORES_FUNDO = ['#FFFFFF', '#F4F5FF', '#F1F3F9', '#F6BF00', '#1998FF', '#0072CE', '#004882', '#011527', '#051F38', '#111111'];
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
@@ -83,6 +83,17 @@ function elTexto(tag, classe, texto) {
   const el = document.createElement(tag);
   el.className = classe;
   el.textContent = texto || '';
+  return el;
+}
+
+// Igual ao elTexto, mas interpreta a marcação da copy: **/*negrito*, _itálico_, =destaque=.
+// É o que faz a formatação do carrossel valer em todos os modelos.
+function elMarkup(tag, classe, texto) {
+  const el = document.createElement(tag);
+  el.className = classe;
+  const t = (texto || '').replace(/\*\*/g, '*'); // **negrito** vira *negrito* (inline)
+  if (typeof parseInline === 'function') el.appendChild(parseInline(t));
+  else el.textContent = texto || '';
   return el;
 }
 
@@ -143,7 +154,7 @@ function renderTwitter(estado) {
   head.appendChild(info);
 
   safe.appendChild(head);
-  safe.appendChild(elTexto('div', 'tw-body', f.texto || 'Escreva aqui o texto do post.'));
+  safe.appendChild(elMarkup('div', 'tw-body', f.texto || 'Escreva aqui o texto do post.'));
   return card;
 }
 
@@ -153,9 +164,9 @@ function renderMancheteA(estado) {
   const { card, safe } = novaArtCard(estado, 'tpl-manchete mca');
   aplicarFundoImagem(card, f.imagem);
 
-  if (f.kicker) safe.appendChild(elTexto('div', 'kicker', f.kicker));
-  safe.appendChild(elTexto('div', 'headline', f.titulo || 'TÍTULO GRANDE'));
-  if (f.subtitulo) safe.appendChild(elTexto('div', 'subtitulo', f.subtitulo));
+  if (f.kicker) safe.appendChild(elMarkup('div', 'kicker', f.kicker));
+  safe.appendChild(elMarkup('div', 'headline', f.titulo || 'TÍTULO GRANDE'));
+  if (f.subtitulo) safe.appendChild(elMarkup('div', 'subtitulo', f.subtitulo));
   return card;
 }
 
@@ -167,9 +178,9 @@ function renderMancheteB(estado) {
 
   const bloco = document.createElement('div');
   bloco.className = 'mcb-bloco';
-  bloco.appendChild(elTexto('div', 'titulo', f.titulo || 'Linha do título,'));
-  bloco.appendChild(elTexto('div', 'destaque', f.destaque || 'DESTAQUE EM VERMELHO'));
+  bloco.appendChild(elMarkup('div', 'titulo', f.titulo || 'Linha do título,'));
+  bloco.appendChild(elMarkup('div', 'destaque', f.destaque || 'DESTAQUE EM VERMELHO'));
   safe.appendChild(bloco);
-  if (f.subtitulo) safe.appendChild(elTexto('div', 'subtitulo', f.subtitulo));
+  if (f.subtitulo) safe.appendChild(elMarkup('div', 'subtitulo', f.subtitulo));
   return card;
 }

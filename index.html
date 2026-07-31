@@ -7,6 +7,26 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Tela inicial -->
+  <div id="home-screen" class="home-screen">
+    <div class="home-card">
+      <div class="home-logo">4<span>creaty</span></div>
+      <p class="home-sub">Crie posts e carrosséis nos modelos validados da 4blue.</p>
+      <ol class="home-steps">
+        <li>Escolha um modelo (Carrossel, Twitter, Manchete...).</li>
+        <li>Escreva ou cole a copy — o preview aparece na hora.</li>
+        <li>Ajuste formato, cores, tamanho e imagens.</li>
+        <li>Baixe em PNG/JPG ou salve no seu histórico.</li>
+      </ol>
+      <div class="home-acoes">
+        <button class="btn-primary" onclick="criarNovoPost()">Criar novo post</button>
+        <button class="btn-secondary" onclick="abrirBiblioteca()">Meus posts</button>
+        <button class="btn-secondary" onclick="abrirAcervo()">Acervo</button>
+      </div>
+      <div id="home-conta" class="home-conta"></div>
+    </div>
+  </div>
+
   <div class="app">
     <div class="toolbar">
       <h2>
@@ -14,6 +34,7 @@
         4creaty
       </h2>
       <div class="toolbar-actions">
+        <button class="btn-secondary" onclick="irParaHome()" title="Tela inicial">Início</button>
         <div id="conta-area" class="conta-area"></div>
         <button class="btn-secondary" onclick="abrirBiblioteca()" title="Abrir post salvo no Drive">
           <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-7.9a1 1 0 0 1-.8-.4l-1-1.3A1 1 0 0 0 9.5 4H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/></svg>
@@ -37,18 +58,22 @@
       <div class="editor-panel">
         <div class="panel-head">
           <div class="modelo-linha">
-            <label class="panel-title" for="model-select">Modelo</label>
+            <label class="panel-title" for="model-select">Modelo do post</label>
             <select id="model-select"></select>
           </div>
           <div class="editor-actions">
             <button class="btn-secondary" onclick="document.getElementById('file-input').click()" title="Importar .docx, .txt ou .md">Importar doc</button>
             <input type="file" id="file-input" accept=".docx,.txt,.md,.markdown" style="display:none" />
+            <button class="btn-secondary" onclick="importarGDoc()" title="Importar de um link do Google Docs">Google Docs</button>
             <button class="btn-secondary" onclick="toggleEmoji()" title="Inserir emoji">Emoji</button>
             <button class="btn-secondary" onclick="clearEditor()" title="Limpar">Limpar</button>
           </div>
         </div>
 
         <div id="emoji-picker" class="emoji-picker" style="display:none"></div>
+
+        <!-- Navegação de cards (modelos de card único, multi-card) -->
+        <div id="card-nav" class="card-nav" style="display:none"></div>
 
         <!-- Entrada do modelo Notas (texto marcado) -->
         <div id="editor-wrap">
@@ -98,7 +123,14 @@ Separe os cards com uma linha em branco (ou use #1, #2...)."></textarea>
     <!-- Modal: Abrir da biblioteca (Drive) -->
     <div id="open-modal" class="modal-overlay" style="display:none" onclick="fecharBiblioteca(event)">
       <div class="modal">
-        <h3>Abrir post salvo</h3>
+        <div class="auth-tabs">
+          <button id="tab-meus" class="auth-tab ativo" onclick="mostrarBiblioteca('meus')">Meus posts</button>
+          <button id="tab-acervo" class="auth-tab" onclick="mostrarBiblioteca('acervo')">Acervo</button>
+        </div>
+        <div id="acervo-filtro" class="acervo-filtro" style="display:none">
+          <label for="filtro-autor">Autor</label>
+          <select id="filtro-autor" onchange="filtrarAcervo()"></select>
+        </div>
         <div id="saved-list" class="saved-list"><div class="saved-vazio">Carregando...</div></div>
         <button class="btn-secondary" onclick="fecharBiblioteca()">Fechar</button>
       </div>
@@ -148,6 +180,23 @@ Separe os cards com uma linha em branco (ou use #1, #2...)."></textarea>
           <button class="btn-secondary" id="lote-save" onclick="salvarLoteDrive()" disabled>Salvar todos no Drive</button>
         </div>
         <button class="btn-secondary" onclick="fecharLote()">Fechar</button>
+      </div>
+    </div>
+
+    <!-- Modal: Colar copy e dividir em cards -->
+    <div id="colar-modal" class="modal-overlay" style="display:none" onclick="fecharColar(event)">
+      <div class="modal">
+        <h3>Colar copy e dividir em cards</h3>
+        <p class="lote-info">Cole a copy. Cada bloco separado por <code>#1</code>/<code>#2</code> (ou por linha em branco) vira um card do modelo atual, com a marcação (<code>**negrito**</code>, <code>=destaque=</code>) preservada.</p>
+        <textarea id="colar-texto" class="colar-texto" rows="10" placeholder="#1
+**Primeiro card** com =destaque=
+
+#2
+Segundo card"></textarea>
+        <div class="lote-acoes">
+          <button class="btn-primary" onclick="aplicarColar()">Dividir em cards</button>
+          <button class="btn-secondary" onclick="fecharColar()">Cancelar</button>
+        </div>
       </div>
     </div>
 

@@ -304,7 +304,34 @@ body {
 .campo-slider label { font-size: 11px; color: var(--text-muted); min-width: 78px; }
 .campo-slider input[type=range] { flex: 1; }
 
+/* ─── Navegação de cards (multi-card) ─── */
+.card-nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: #fafafa; }
+.card-nav .btn-secondary { padding: 6px 10px; font-size: 12px; }
+.card-nav-info { font-size: 12px; font-weight: 800; color: var(--text); margin-right: auto; }
+.card-modelo-select { font-family: var(--font); font-size: 12px; font-weight: 700; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; }
+.colar-texto { width: 100%; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; border: 1px solid var(--border); border-radius: 8px; padding: 12px; resize: vertical; background: #fafafa; outline: none; }
+.colar-texto:focus { border-color: #999; background: #fff; }
+.card-wrap .art-card { cursor: pointer; }
+.card-wrap.ativo .art-card { outline: 3px solid var(--primary); outline-offset: 2px; }
+
 /* ─── Lote (planilha) ─── */
 .lote-info { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 .lote-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
 .lote-acoes .btn-primary, .lote-acoes .btn-secondary { flex: 1; justify-content: center; min-width: 140px; }
+
+/* ─── Tela inicial ─── */
+.home-screen { position: fixed; inset: 0; z-index: 2000; background: linear-gradient(160deg, #0072CE, #004882); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.home-card { background: #fff; border-radius: 14px; padding: 32px; max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.home-logo { font-size: 28px; font-weight: 800; color: #004882; letter-spacing: 0.02em; }
+.home-logo span { color: #F6BF00; }
+.home-sub { color: var(--text-muted); margin-top: 4px; font-size: 14px; }
+.home-steps { margin: 18px 0; padding-left: 18px; color: #333; font-size: 14px; line-height: 1.7; }
+.home-acoes { display: flex; flex-direction: column; gap: 8px; }
+.home-acoes .btn-primary, .home-acoes .btn-secondary { width: 100%; justify-content: center; padding: 12px; }
+.home-conta { margin-top: 14px; font-size: 12px; color: var(--text-muted); text-align: center; }
+
+/* ─── Acervo / abas da biblioteca ─── */
+.acervo-filtro { display: flex; align-items: center; gap: 8px; }
+.acervo-filtro label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.acervo-filtro select { flex: 1; font-family: var(--font); font-size: 13px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; }
+.auth-form input { width: 100%; }
