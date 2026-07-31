@@ -9,7 +9,7 @@
  * Enquanto estiver vazio, os botões Salvar/Abrir avisam que falta configurar.
  */
 
-const APPS_SCRIPT_URL = ""; // ex.: https://script.google.com/macros/s/SEU_ID/exec
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSTAP-r-TKvwW9pxR5-ro4Soz5A24qb4bePn7_O8VYftFWI9aVL-Ztf_qQMrx9v6Jz/exec"; // ex.: https://script.google.com/macros/s/SEU_ID/exec
 
 let carrosselAtualId = null; // id do registro aberto/salvo, para atualizar em vez de duplicar
 
