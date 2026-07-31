@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4creaty · Gerador de criativos 4blue</title>
+  <meta name="description" content="Copy validada vira carrossel e imagem no Canva, sem quebrar o layout.">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+  <header class="topo">
+    <div class="marca">
+      <span class="marca-simbolo" aria-hidden="true">&#9670;</span>
+      <div>
+        <h1>4creaty</h1>
+        <p>Copy validada vira arte no Canva — sem quebrar o layout</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p id="erro_global" class="erro-global oculto"></p>
+
+    <!-- Passo 1 · Modelos -->
+    <section class="cartao">
+      <h2>
+        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        Modelos
+        <span class="passo">1</span>
+      </h2>
+      <p class="dica">Escolha um ou mais modelos — a mesma copy gera uma variação por modelo. Campos repetidos usam o limite mais restrito.</p>
+      <div id="lista_modelos" class="lista-modelos"></div>
+      <p class="nota">Catálogo em fase de exemplo. Modelos oficiais da 4blue entram a qualquer momento via <code>modelos/index.json</code> (skill <code>4creaty-novo-modelo</code>).</p>
+    </section>
+
+    <!-- Passo 2 · Direção de arte -->
+    <section class="cartao">
+      <h2>
+        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+        Direção de arte
+        <span class="passo">2</span>
+      </h2>
+      <p class="dica">Você escolhe o clima; o sistema resolve os hexadecimais do template.</p>
+      <div id="area_paletas" class="area-paletas"></div>
+    </section>
+
+    <!-- Passo 3 · Conteúdo -->
+    <section class="cartao">
+      <h2>
+        <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        Conteúdo
+        <span class="passo">3</span>
+      </h2>
+      <div id="area_campos"><p class="vazio">Selecione ao menos um modelo para gerar os campos.</p></div>
+    </section>
+
+    <!-- Barra de ação -->
+    <section class="barra-acao">
+      <div class="identificacao">
+        <label for="autor">Seu e-mail (opcional)</label>
+        <input type="email" id="autor" placeholder="voce@4blue.com.br" autocomplete="email">
+      </div>
+      <div class="acoes">
+        <p id="status_form" class="status">Selecione um modelo para começar.</p>
+        <button id="btn_csv" type="button" disabled>
+          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Gerar CSV para o Canva
+        </button>
+        <button id="btn_enviar" type="button" class="secundario oculto" disabled>
+          <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Enviar para a planilha
+        </button>
+      </div>
+    </section>
+
+    <p class="rodape-instrucao">Depois de gerar: Canva &rarr; abrir o template do modelo &rarr; Apps &rarr; <strong>Criar em Massa</strong> &rarr; enviar o CSV &rarr; conectar colunas &rarr; Gerar.</p>
+  </main>
+
+  <footer class="rodape">4creaty &middot; 4blue &mdash; validado na origem, renderizado no Canva</footer>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
