@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "4creaty Studio - Documento",
+  "description": "Espelho em JSON Schema do modelo TypeScript (RT-01). schemaVersion permite migração.",
+  "type": "object",
+  "required": ["schemaVersion", "projetos"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "projetos": { "type": "array", "items": { "$ref": "#/definitions/Projeto" } }
+  },
+  "definitions": {
+    "Projeto": {
+      "type": "object",
+      "required": ["id", "nome", "cliente", "brandKits", "posts"],
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "cliente": { "type": "string" },
+        "brandKits": { "type": "array", "items": { "$ref": "#/definitions/BrandKit" } },
+        "posts": { "type": "array", "items": { "$ref": "#/definitions/Post" } },
+        "criadoEm": { "type": "string" },
+        "atualizadoEm": { "type": "string" }
+      }
+    },
+    "BrandKit": {
+      "type": "object",
+      "required": ["id", "nome", "cores", "tipografia", "layout"],
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "cores": { "$ref": "#/definitions/PapeisDeCor" },
+        "tipografia": { "type": "object" },
+        "layout": { "type": "object" },
+        "logo": { "type": "object" }
+      }
+    },
+    "PapeisDeCor": {
+      "type": "object",
+      "required": ["fundo", "fundoAlt", "titulo", "corpo", "destaque", "cta", "textoSobreCta", "overlayImagem"],
+      "properties": {
+        "fundo": { "type": "string" },
+        "fundoAlt": { "type": "string" },
+        "titulo": { "type": "string" },
+        "corpo": { "type": "string" },
+        "destaque": { "type": "string" },
+        "cta": { "type": "string" },
+        "textoSobreCta": { "type": "string" },
+        "overlayImagem": { "type": "string" }
+      }
+    },
+    "Post": {
+      "type": "object",
+      "required": ["id", "projetoId", "titulo", "tipo", "formato", "brandKitId", "status", "slides"],
+      "properties": {
+        "id": { "type": "string" },
+        "projetoId": { "type": "string" },
+        "titulo": { "type": "string" },
+        "tipo": { "enum": ["carrossel", "feed", "anuncio", "story"] },
+        "formato": { "type": "object" },
+        "brandKitId": { "type": "string" },
+        "status": { "enum": ["rascunho", "revisao", "aprovado", "publicado"] },
+        "slides": { "type": "array", "items": { "$ref": "#/definitions/Slide" } },
+        "legenda": { "type": "string" },
+        "hashtags": { "type": "array", "items": { "type": "string" } },
+        "versoes": { "type": "array" }
+      }
+    },
+    "Slide": {
+      "type": "object",
+      "required": ["id", "tipo", "fundo", "camadas", "estado"],
+      "properties": {
+        "id": { "type": "string" },
+        "tipo": { "enum": ["capa", "conteudo", "cta"] },
+        "fundo": { "type": "object" },
+        "camadas": { "type": "array", "items": { "$ref": "#/definitions/Camada" } },
+        "estado": { "enum": ["pronto", "gerando", "erro"] }
+      }
+    },
+    "Camada": {
+      "type": "object",
+      "required": ["id", "tipo", "x", "y", "largura", "altura", "ancora", "z"],
+      "properties": {
+        "id": { "type": "string" },
+        "tipo": { "enum": ["texto", "imagem", "forma", "icone", "logo", "grupo"] },
+        "x": { "type": "number" }, "y": { "type": "number" },
+        "largura": { "type": "number" }, "altura": { "type": "number" },
+        "ancora": { "type": "string" },
+        "rotacao": { "type": "number" },
+        "opacidade": { "type": "number" },
+        "visivel": { "type": "boolean" },
+        "bloqueada": { "type": "boolean" },
+        "z": { "type": "number" }
+      }
+    }
+  }
+}
