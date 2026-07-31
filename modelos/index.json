@@ -1,0 +1,6 @@
+{
+  "observacao": "Manifesto do catálogo. Para adicionar um modelo: criar modelos/<id>.json (schema em docs/04) e incluir o id aqui. A skill 4creaty-novo-modelo faz os dois passos.",
+  "modelos": [
+    "carrossel-conteudo-tecnico"
+  ]
+}
