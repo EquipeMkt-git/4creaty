@@ -145,17 +145,14 @@ body {
 .blue  .card-divider { background: rgba(255,255,255,0.20); }
 
 /* ─── Inline Markup ─── */
-/* Destaque: marcador sólido atrás do texto, sem quebrar a diagramação e
-   compatível com a exportação (html2canvas). */
+/* Destaque: marcador sólido atrás do texto (grifo é aplicado palavra por
+   palavra no parseInline, então não cobre o texto vizinho ao quebrar linha). */
 .hl {
   background-color: var(--yellow);
   color: #1a1a1a;
   font-weight: inherit;
-  padding: 0 0.12em;
-  border-radius: 3px;
-  white-space: normal;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+  padding: 0;
+  border-radius: 0;
 }
 .inline-bold { font-weight: 800; }
 .white .inline-bold { color: #2D2D2D; }
