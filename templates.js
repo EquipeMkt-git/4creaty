@@ -168,17 +168,27 @@ function elMarkup(tag, classe, texto) {
   return el;
 }
 
-// Insere imagem de fundo (cover) com overlay ajustável atrás do conteúdo.
+// Posiciona a imagem por tamanho/posição (não por transform) — compatível com
+// a exportação (html2canvas), sem deformar. zoom<1 mostra mais; zoom>1 aproxima.
+function posicionarImagem(inner, img) {
+  const zoom = img.zoom || 1;
+  inner.style.width = (zoom * 100) + '%';
+  inner.style.height = (zoom * 100) + '%';
+  inner.style.left = ((50 - 50 * zoom) + (img.x || 0)) + '%';
+  inner.style.top = ((50 - 50 * zoom) + (img.y || 0)) + '%';
+  inner.style.backgroundImage = 'url("' + String(img.src).replace(/"/g, '\\"') + '")';
+}
+
+// Imagem de fundo (cover) com overlay ajustável atrás do conteúdo.
 function aplicarFundoImagem(card, img) {
   if (!img || !img.src) return;
   card.classList.add('com-imagem');
   const bg = document.createElement('div');
   bg.className = 'art-bg';
-  const el = document.createElement('img');
-  el.className = 'img-fill';
-  el.src = img.src;
-  el.style.transform = 'translate(' + (img.x || 0) + '%, ' + (img.y || 0) + '%) scale(' + (img.zoom || 1) + ')';
-  bg.appendChild(el);
+  const inner = document.createElement('div');
+  inner.className = 'art-bg-img';
+  posicionarImagem(inner, img);
+  bg.appendChild(inner);
   const ov = document.createElement('div');
   ov.className = 'art-overlay';
   ov.style.opacity = img.overlay != null ? img.overlay : 0.35;
@@ -206,11 +216,10 @@ function renderTwitter(estado) {
   const avatar = document.createElement('div');
   avatar.className = 'tw-avatar';
   if (f.foto && f.foto.src) {
-    const img = document.createElement('img');
-    img.className = 'img-fill';
-    img.src = f.foto.src;
-    img.style.transform = 'translate(' + (f.foto.x || 0) + '%, ' + (f.foto.y || 0) + '%) scale(' + (f.foto.zoom || 1) + ')';
-    avatar.appendChild(img);
+    const inner = document.createElement('div');
+    inner.className = 'tw-avatar-img';
+    posicionarImagem(inner, f.foto);
+    avatar.appendChild(inner);
   }
   head.appendChild(avatar);
 
