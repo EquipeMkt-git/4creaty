@@ -417,10 +417,14 @@ async function capturaCanvas(index) {
 // Nome de exportação: se você definir "Nº inicial", os arquivos seguem a sequência
 // (ex.: 105, 106, 107...) com o prefixo opcional. Isso NÃO muda o nome salvo no 4creaty.
 function nomeArquivoExport(i) {
-  const pre = ((document.getElementById('export-prefixo') || {}).value || '').trim();
+  // Número no COMEÇO: "44 - (15.05.2026) ADS - GERAL - PRESENCIAL".
+  const pre = ((document.getElementById('export-prefixo') || {}).value || '').replace(/^[\s\-]+|[\s\-]+$/g, '');
   const ini = (document.getElementById('export-inicio') || {}).value;
-  if (ini !== '' && ini != null && !isNaN(Number(ini))) return pre + (Number(ini) + i);
-  if (pre) return pre + (i + 1);
+  if (ini !== '' && ini != null && !isNaN(Number(ini))) {
+    const n = Number(ini) + i;
+    return pre ? (n + ' - ' + pre) : String(n);
+  }
+  if (pre) return pre + ' - ' + (i + 1);
   return 'card-' + String(i + 1).padStart(2, '0');
 }
 
