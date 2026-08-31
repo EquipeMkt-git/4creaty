@@ -85,12 +85,29 @@ function homeCard(item, acervo) {
   meta.className = 'home-post-meta';
   meta.textContent = (acervo ? ((item.autor || 'Sem autor') + ' · ') : '') + formatarDataHome(item.atualizado_em);
   div.appendChild(meta);
-  div.addEventListener('click', () => {
-    document.getElementById('home-screen').style.display = 'none';
-    if (acervo) { if (typeof usarDoAcervo === 'function') usarDoAcervo(item.id); }
-    else { if (typeof abrirCarrossel === 'function') abrirCarrossel(item.id, false); }
-  });
+
+  const acoes = document.createElement('div');
+  acoes.className = 'home-post-acoes';
+  const bAbrir = document.createElement('button');
+  bAbrir.className = 'btn-dl';
+  bAbrir.textContent = acervo ? 'Usar' : 'Abrir';
+  bAbrir.addEventListener('click', (e) => { e.stopPropagation(); abrirDaHome(item, acervo, false); });
+  acoes.appendChild(bAbrir);
+  const bDup = document.createElement('button');
+  bDup.className = 'btn-dl';
+  bDup.textContent = 'Duplicar';
+  bDup.addEventListener('click', (e) => { e.stopPropagation(); abrirDaHome(item, acervo, true); });
+  acoes.appendChild(bDup);
+  div.appendChild(acoes);
+
+  div.addEventListener('click', () => abrirDaHome(item, acervo, false));
   return div;
+}
+
+function abrirDaHome(item, acervo, duplicar) {
+  document.getElementById('home-screen').style.display = 'none';
+  if (acervo) { if (typeof usarDoAcervo === 'function') usarDoAcervo(item.id); }
+  else { if (typeof abrirCarrossel === 'function') abrirCarrossel(item.id, duplicar); }
 }
 
 // Renderiza o primeiro card do post salvo, em miniatura (usa o próprio modelo).

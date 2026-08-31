@@ -14,17 +14,27 @@ function camposIniciais(t) {
   (t.campos || []).forEach(c => {
     if (c.tipo === 'check') f[c.id] = c.valorPadrao !== false;
     else if (c.tipo === 'image') f[c.id] = '';
+    else if (c.tipo === 'cor') f[c.id] = c.valorPadrao || '#8a1414';
     else f[c.id] = c.placeholder || '';
   });
   return f;
 }
 function novoCard(templateId) { return { templateId, fields: camposIniciais(TEMPLATES[templateId]) }; }
+// Novo card herdando a config do primeiro (foto/nome/@ do Twitter, cor/imagem das Manchetes); zera só a copy.
+function novoCardHerdado() {
+  const base = estado.cards[0];
+  if (!base) return novoCard(estado.templateId);
+  const t = TEMPLATES[base.templateId];
+  const fields = JSON.parse(JSON.stringify(base.fields || {}));
+  (t.campos || []).forEach(c => { if ((c.tipo === 'text' || c.tipo === 'textarea') && !c.fixo) fields[c.id] = ''; });
+  return { templateId: base.templateId, fields };
+}
 function cardAtual() { return estado.cards[estado.cardAtivo]; }
 // Campos "ativos": do card selecionado.
 function f_() { return cardAtual() ? cardAtual().fields : {}; }
 
 function selecionarCard(i) { if (i < 0 || i >= estado.cards.length) return; estado.cardAtivo = i; aplicarModoUI(); render(); }
-function adicionarCard() { estado.cards.push(novoCard(cardAtual() ? cardAtual().templateId : estado.templateId)); estado.cardAtivo = estado.cards.length - 1; aplicarModoUI(); render(); }
+function adicionarCard() { estado.cards.push(novoCardHerdado()); estado.cardAtivo = estado.cards.length - 1; aplicarModoUI(); render(); }
 function trocarModeloDoCard(newId) {
   const c = cardAtual();
   if (!c || c.templateId === newId) return;
@@ -59,14 +69,9 @@ function aplicarColar() {
   if (!blocos.length) { statusApp('Nada para dividir.', 'erro'); return; }
   const modelo = estado.templateId; // usa o modelo atual (inclui Notas)
   const t = TEMPLATES[modelo];
-  const principal = (t.campos.find(c => c.principal) || {}).id;
   estado.templateId = modelo;
   document.getElementById('model-select').value = modelo;
-  estado.cards = blocos.map(b => {
-    const f = camposIniciais(t);
-    if (principal) f[principal] = b;
-    return { templateId: modelo, fields: f };
-  });
+  estado.cards = blocos.map(b => ({ templateId: modelo, fields: distribuirBloco(t, b) }));
   estado.cardAtivo = 0;
   fecharColar();
   aplicarModoUI();
@@ -74,9 +79,39 @@ function aplicarColar() {
   render();
   statusApp(blocos.length + ' card(s) criados a partir da copy.', 'ok');
 }
+
+// Distribui um bloco nos campos do modelo. Aceita tags no início da linha:
+// FAIXA:, TITULO:, SUB:, DESTAQUE:, TEXTO:, NOME:, USER:. Linhas sem tag vão pro campo principal.
+function distribuirBloco(t, bloco) {
+  const f = camposIniciais(t);
+  const alias = {
+    faixa: 'kicker', kicker: 'kicker', titulo: 'titulo', 'título': 'titulo',
+    sub: 'subtitulo', subtitulo: 'subtitulo', 'subtítulo': 'subtitulo',
+    destaque: 'destaque', texto: 'texto', nome: 'nome', user: 'user'
+  };
+  const restante = [];
+  let usouTag = false;
+  bloco.split('\n').forEach(l => {
+    const m = l.match(/^\s*([A-Za-zÀ-ÿ@]{2,12})\s*:\s*(.*)$/);
+    if (m) {
+      const chave = m[1].toLowerCase();
+      const campo = alias[chave] || chave;
+      if ((t.campos || []).some(c => c.id === campo && (c.tipo === 'text' || c.tipo === 'textarea'))) {
+        f[campo] = m[2].trim(); usouTag = true; return;
+      }
+    }
+    restante.push(l);
+  });
+  const principal = (t.campos.find(c => c.principal) || {}).id;
+  const rest = restante.join('\n').trim();
+  if (rest && principal && (!usouTag || !f[principal])) f[principal] = rest;
+  return f;
+}
 function duplicarCard() {
   const c = cardAtual();
-  estado.cards.splice(estado.cardAtivo + 1, 0, { templateId: c.templateId, fields: JSON.parse(JSON.stringify(c.fields)) });
+  const novo = { templateId: c.templateId, fields: JSON.parse(JSON.stringify(c.fields)) };
+  if (c.overrides) novo.overrides = JSON.parse(JSON.stringify(c.overrides));
+  estado.cards.splice(estado.cardAtivo + 1, 0, novo);
   estado.cardAtivo++; aplicarModoUI(); render();
 }
 function removerCard() {
@@ -111,6 +146,8 @@ function montarCardNav() {
   sel.value = cardAtual().templateId;
   sel.addEventListener('change', () => trocarModeloDoCard(sel.value));
   nav.appendChild(sel);
+
+  nav.appendChild(mk(window.modoEdicao ? 'Sair da edição' : 'Editar elementos', function () { if (typeof toggleEditor === 'function') toggleEditor(); }));
 }
 
 const SAMPLE = `#1
@@ -189,6 +226,7 @@ function selecionarModelo(id) {
   estado.templateId = id;
   estado.format = TEMPLATES[id].formatos[0];
   estado.escala = 1;
+  estado.bg = TEMPLATES[id].bgPadrao || '#FFFFFF';
   const escSlider = document.getElementById('escala');
   if (escSlider) escSlider.value = 1;
   // "Modelo do post": cria o primeiro card ou aplica o modelo a todos os cards existentes.
@@ -260,6 +298,18 @@ function montarCampos(t) {
       cb.addEventListener('change', () => { alvo[c.id] = cb.checked; render(); });
       lab.style.display = 'inline'; lab.style.marginLeft = '6px';
       wrap.innerHTML = ''; wrap.appendChild(cb); wrap.appendChild(lab);
+    } else if (c.tipo === 'cor') {
+      const box = document.createElement('div');
+      box.className = 'cor-swatches';
+      CORES_ACENTO.forEach(op => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'swatch-btn' + ((alvo[c.id] || '#8a1414') === op.hex ? ' ativo' : '');
+        b.style.background = op.hex; b.title = op.nome;
+        b.addEventListener('click', () => { alvo[c.id] = op.hex; montarCampos(t); render(); });
+        box.appendChild(b);
+      });
+      wrap.appendChild(box);
     } else {
       const inp = document.createElement('input');
       inp.type = 'text'; inp.id = 'campo_' + c.id; inp.value = alvo[c.id] || '';
@@ -326,7 +376,9 @@ function renderCards(grid, empty, bar) {
     const st = { templateId: card.templateId, format: estado.format, bg: estado.bg, escala: estado.escala, fields: card.fields };
     const el = TEMPLATES[card.templateId].render(st);
     el.id = 'card-' + i;
+    if (typeof aplicarOverrides === 'function') aplicarOverrides(el, card);
     wrap.appendChild(el);
+    if (window.modoEdicao && i === estado.cardAtivo && typeof habilitarEdicao === 'function') habilitarEdicao(el, card);
     wrap.addEventListener('click', () => { if (estado.cardAtivo !== i) { estado.cardAtivo = i; aplicarModoUI(); render(); } });
     grid.appendChild(wrap);
   });
@@ -362,6 +414,16 @@ async function capturaCanvas(index) {
   return html2canvas(el, { scale: 4, useCORS: true, backgroundColor: bgDoCard(index), width: el.offsetWidth, height: el.offsetHeight });
 }
 
+// Nome de exportação: se você definir "Nº inicial", os arquivos seguem a sequência
+// (ex.: 105, 106, 107...) com o prefixo opcional. Isso NÃO muda o nome salvo no 4creaty.
+function nomeArquivoExport(i) {
+  const pre = ((document.getElementById('export-prefixo') || {}).value || '').trim();
+  const ini = (document.getElementById('export-inicio') || {}).value;
+  if (ini !== '' && ini != null && !isNaN(Number(ini))) return pre + (Number(ini) + i);
+  if (pre) return pre + (i + 1);
+  return 'card-' + String(i + 1).padStart(2, '0');
+}
+
 async function downloadCard(index) {
   const el = document.getElementById('card-' + index);
   if (!el) return;
@@ -369,7 +431,7 @@ async function downloadCard(index) {
   const fmt = formatoExport();
   const ext = fmt === 'jpeg' ? 'jpg' : 'png';
   const link = document.createElement('a');
-  link.download = `4blue-${estado.templateId}-${index + 1}.${ext}`;
+  link.download = nomeArquivoExport(index) + '.' + ext;
   link.href = fmt === 'jpeg' ? canvas.toDataURL('image/jpeg', 0.95) : canvas.toDataURL('image/png');
   link.click();
 }
@@ -389,7 +451,7 @@ async function baixarTudo() {
   for (let i = 0; i < total; i++) {
     const canvas = await capturaCanvas(i);
     const dataUrl = fmt === 'jpeg' ? canvas.toDataURL('image/jpeg', 0.95) : canvas.toDataURL('image/png');
-    zip.file(`card-${String(i + 1).padStart(2, '0')}.${ext}`, dataUrl.split(',')[1], { base64: true });
+    zip.file(nomeArquivoExport(i) + '.' + ext, dataUrl.split(',')[1], { base64: true });
   }
   const blob = await zip.generateAsync({ type: 'blob' });
   const link = document.createElement('a');
@@ -560,6 +622,13 @@ function criarNovoPost() {
   aplicarModoUI(); montarSwatches(); render();
   document.getElementById('home-screen').style.display = 'none';
   statusApp(estado.nome ? 'Novo post: "' + estado.nome + '".' : 'Dê um nome ao salvar.');
+}
+
+// Duplica o post atual: desliga do registro salvo para o próximo Salvar criar uma cópia.
+function duplicarPost() {
+  carrosselAtualId = null;
+  estado.nome = estado.nome ? ('Cópia de ' + estado.nome) : '';
+  statusApp('Post duplicado — salve para criar a cópia.', 'ok');
 }
 
 function openHelp() { document.getElementById('help-modal').style.display = 'flex'; }

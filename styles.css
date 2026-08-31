@@ -145,11 +145,17 @@ body {
 .blue  .card-divider { background: rgba(255,255,255,0.20); }
 
 /* ─── Inline Markup ─── */
+/* Destaque: só um marcador atrás do texto, sem afetar a diagramação. */
 .hl {
-  background: var(--yellow); border-radius: 18px; padding: 1px 8px 2px 8px;
-  display: inline; font-weight: 800; color: #2D2D2D; white-space: nowrap;
+  background-image: linear-gradient(transparent 8%, var(--yellow) 8%, var(--yellow) 92%, transparent 92%);
+  color: #1a1a1a;
+  font-weight: inherit;
+  padding: 0 0.04em;
+  border-radius: 0;
+  white-space: normal;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
-.blue .hl { color: var(--blue-card); }
 .inline-bold { font-weight: 800; }
 .white .inline-bold { color: #2D2D2D; }
 .blue  .inline-bold { color: #fff; }
@@ -330,6 +336,55 @@ body {
 .tpl-notas .line { font-size: calc(4.6cqw * var(--escala, 1)); font-weight: 400; line-height: 1.4; }
 .tpl-notas .card-divider { width: 100%; height: 1.5px; background: currentColor; opacity: 0.15; margin: 1.5cqw 0; flex: none; }
 
+/* ─── Modelos novos ─── */
+.art-card .fill { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; justify-content: center; padding: 8cqw; }
+
+/* Citação */
+.tpl-citacao .cit-aspas { font-family: Georgia, "Times New Roman", serif; font-size: 22cqw; line-height: 0.6; font-weight: 800; }
+.tpl-citacao .cit-texto { font-size: calc(8.5cqw * var(--escala, 1)); font-weight: 400; line-height: 1.25; margin-top: 2cqw; white-space: pre-wrap; }
+.tpl-citacao .cit-rodape { margin-top: 8cqw; }
+.tpl-citacao .cit-autor { font-size: 5.4cqw; font-weight: 800; }
+.tpl-citacao .cit-papel { font-size: 4.2cqw; opacity: 0.8; }
+
+/* Frase minimalista */
+.tpl-frase .safe { text-align: center; }
+.tpl-frase .frase-texto { font-size: calc(4.6cqw * var(--escala, 1)); line-height: 1.6; white-space: pre-wrap; }
+.tpl-frase .frase-autor { margin-top: 6cqw; font-size: 3.8cqw; opacity: 0.7; }
+
+/* Checklist + CTA */
+.tpl-checklist .fill { gap: 4cqw; }
+.tpl-checklist .ck-pergunta { font-family: 'Anton', sans-serif; text-transform: uppercase; font-size: calc(9cqw * var(--escala, 1)); line-height: 1.0; }
+.tpl-checklist .ck-lista { display: flex; flex-direction: column; gap: 2.6cqw; }
+.tpl-checklist .ck-item { display: flex; align-items: center; gap: 3cqw; }
+.tpl-checklist .ck-bola { width: 5cqw; height: 5cqw; border-radius: 50%; border: 0.6cqw solid currentColor; flex: none; }
+.tpl-checklist .ck-txt { font-size: 5cqw; font-weight: 700; }
+.tpl-checklist .ck-sub { font-size: 4.4cqw; line-height: 1.35; white-space: pre-wrap; }
+.tpl-checklist .ck-cta { align-self: flex-start; font-weight: 800; font-size: 4.2cqw; padding: 2.6cqw 5cqw; border-radius: 3cqw; text-transform: uppercase; }
+
+/* Passo a passo */
+.tpl-passos .fill { gap: 2.5cqw; }
+.tpl-passos .ps-titulo { font-family: 'Anton', sans-serif; text-transform: uppercase; font-size: calc(8cqw * var(--escala, 1)); line-height: 1.0; text-align: center; margin-bottom: 2cqw; }
+.tpl-passos .ps-lista { display: flex; flex-direction: column; gap: 2.2cqw; flex: 1; justify-content: center; }
+.tpl-passos .ps-row { display: flex; align-items: center; gap: 2cqw; }
+.tpl-passos .ps-label { flex: 0 0 32%; font-weight: 800; font-size: 3.3cqw; text-transform: uppercase; padding: 2cqw; text-align: center; line-height: 1.1; border-radius: 0.5cqw; }
+.tpl-passos .ps-seta { font-size: 6cqw; font-weight: 800; flex: none; line-height: 1; }
+.tpl-passos .ps-desc { flex: 1; font-size: 3.2cqw; line-height: 1.28; }
+.tpl-passos .ps-rodape { text-align: center; font-weight: 800; font-size: 4cqw; margin-top: 2cqw; }
+
+/* Frase sobre foto */
+.tpl-frasefoto .fill { align-items: center; text-align: center; gap: 3cqw; }
+.tpl-frasefoto .ff-box-wrap { display: flex; justify-content: center; width: 100%; }
+.tpl-frasefoto .ff-box { background: #000; color: #fff; font-weight: 800; font-size: calc(6.5cqw * var(--escala, 1)); line-height: 1.25; padding: 1.4cqw 3cqw; border-radius: 1cqw; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+/* ─── Editor de elemento (arrastar / tamanho / cor) ─── */
+.art-card.modo-edicao .el-editavel { cursor: move; outline: 1px dashed rgba(120,120,120,0.7); outline-offset: 1px; }
+.art-card.modo-edicao .el-editavel.el-sel { outline: 2px solid var(--primary); }
+.el-toolbar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1500; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.22); display: none; flex-direction: column; gap: 8px; min-width: 260px; }
+.el-toolbar .elt-linha { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); font-weight: 700; }
+.el-toolbar .elt-linha input[type=range] { flex: 1; }
+.el-toolbar .elt-cores { display: flex; gap: 6px; flex-wrap: wrap; }
+.el-toolbar .btn-secondary { flex: 1; justify-content: center; }
+
 /* ─── Lote (planilha) ─── */
 .lote-info { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 .lote-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -352,7 +407,13 @@ body {
 .home-thumb .art-card { width: 100%; box-shadow: none; border-radius: 4px; pointer-events: none; }
 .home-thumb-vazio { color: var(--text-muted); font-size: 11px; }
 .home-post-nome { font-size: 13px; font-weight: 700; padding: 8px 10px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home-post-meta { font-size: 11px; color: var(--text-muted); padding: 0 10px 10px; }
+.home-post-meta { font-size: 11px; color: var(--text-muted); padding: 0 10px 8px; }
+.home-post-acoes { display: flex; gap: 6px; padding: 0 10px 10px; }
+.home-post-acoes .btn-dl { width: auto; flex: 1; }
+
+/* Cor de acento (Manchete) e numeração de exportação */
+.cor-swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.export-num { width: 92px; font-family: var(--font); font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
 
 /* ─── Acervo / abas da biblioteca ─── */
 .acervo-filtro { display: flex; align-items: center; gap: 8px; }

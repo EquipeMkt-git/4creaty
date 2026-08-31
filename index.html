@@ -43,6 +43,7 @@
           <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Salvar
         </button>
+        <button class="btn-secondary" onclick="duplicarPost()" title="Duplicar este post">Duplicar</button>
         <button class="btn-secondary" onclick="abrirLote()" title="Gerar vários posts de uma planilha">Lote</button>
         <button class="btn-secondary" onclick="openHelp()" title="Guia de sintaxe">Sintaxe</button>
         <button class="btn-primary" onclick="generateCarousel()" title="Atualizar preview (Ctrl+Enter)">
@@ -100,6 +101,14 @@
           <div class="fmt">
             <label for="export-format">Formato</label>
             <select id="export-format"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
+          </div>
+          <div class="fmt">
+            <label for="export-inicio">Nº inicial</label>
+            <input type="number" id="export-inicio" class="export-num" placeholder="ex.: 105" />
+          </div>
+          <div class="fmt">
+            <label for="export-prefixo">Prefixo</label>
+            <input type="text" id="export-prefixo" class="export-num" placeholder="opcional" />
           </div>
           <button class="btn-primary" onclick="baixarTudo()">
             <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -228,5 +237,6 @@ Segundo card"></textarea>
   <script src="emojis.js"></script>
   <script src="bulk.js"></script>
   <script src="home.js"></script>
+  <script src="editor.js"></script>
 </body>
 </html>
