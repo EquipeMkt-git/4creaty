@@ -145,13 +145,14 @@ body {
 .blue  .card-divider { background: rgba(255,255,255,0.20); }
 
 /* ─── Inline Markup ─── */
-/* Destaque: só um marcador atrás do texto, sem afetar a diagramação. */
+/* Destaque: marcador sólido atrás do texto, sem quebrar a diagramação e
+   compatível com a exportação (html2canvas). */
 .hl {
-  background-image: linear-gradient(transparent 8%, var(--yellow) 8%, var(--yellow) 92%, transparent 92%);
+  background-color: var(--yellow);
   color: #1a1a1a;
   font-weight: inherit;
-  padding: 0 0.04em;
-  border-radius: 0;
+  padding: 0 0.12em;
+  border-radius: 3px;
   white-space: normal;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -302,11 +303,13 @@ body {
 
 /* ─── Imagens nos modelos (upload + corte) ─── */
 .img-fill { width: 100%; height: 100%; object-fit: cover; display: block; }
+.art-bg-img, .tw-avatar-img { position: absolute; background-size: cover; background-position: center; background-repeat: no-repeat; }
 .tpl-twitter .tw-avatar { position: relative; overflow: hidden; }
 .art-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
 .art-overlay { position: absolute; inset: 0; background: #000; z-index: 1; }
 .art-card .safe { position: relative; z-index: 2; }
-.art-card.com-imagem { color: #fff !important; }
+.art-card.com-imagem { color: #fff; }
+.art-card.com-imagem .hl { color: #1a1a1a; }
 .campo-slider { display: flex; align-items: center; gap: 8px; }
 .campo-slider label { font-size: 11px; color: var(--text-muted); min-width: 78px; }
 .campo-slider input[type=range] { flex: 1; }
