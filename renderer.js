@@ -20,12 +20,22 @@ function parseInline(text) {
     }
     const raw = match[0];
     const inner = raw.slice(1, -1);
-    const span = document.createElement('span');
-    if (raw.startsWith('*')) span.className = 'inline-bold';
-    else if (raw.startsWith('_')) span.className = 'inline-italic';
-    else span.className = 'hl';
-    span.textContent = inner;
-    frag.appendChild(span);
+    if (raw.startsWith('=')) {
+      // Grifo palavra por palavra: cada palavra fica em uma linha só, então na
+      // quebra de linha e na exportação a marcação nunca cobre o texto vizinho.
+      const palavras = inner.split(' ');
+      palavras.forEach((w, wi) => {
+        const s = document.createElement('span');
+        s.className = 'hl';
+        s.textContent = (wi < palavras.length - 1) ? (w + ' ') : w;
+        frag.appendChild(s);
+      });
+    } else {
+      const span = document.createElement('span');
+      span.className = raw.startsWith('*') ? 'inline-bold' : 'inline-italic';
+      span.textContent = inner;
+      frag.appendChild(span);
+    }
     lastIndex = match.index + raw.length;
   }
   if (lastIndex < text.length) {
