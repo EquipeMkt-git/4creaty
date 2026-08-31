@@ -177,9 +177,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   carregarTextoComoNotas(SAMPLE); // deixa um carrossel Notas de exemplo carregado atrás da home
 
+  // Recupera automaticamente o último trabalho não salvo (rede de segurança).
+  if (typeof carregarRascunho === 'function') carregarRascunho((d) => {
+    if (d && d.estado && Array.isArray(d.estado.cards) && d.estado.cards.length) aplicarRascunho(d);
+  });
+
   document.getElementById('home-screen').style.display = 'block';
   if (typeof carregarHome === 'function') carregarHome();
 });
+
+function aplicarRascunho(d) {
+  try {
+    Object.assign(estado, d.estado);
+    if (!Array.isArray(estado.cards) || !estado.cards.length) return;
+    estado.cardAtivo = Math.min(estado.cardAtivo || 0, estado.cards.length - 1);
+    carrosselAtualId = d.id || null;
+    const sel = document.getElementById('model-select'); if (sel) sel.value = estado.templateId;
+    const esc = document.getElementById('escala'); if (esc) esc.value = estado.escala || 1;
+    aplicarModoUI();
+    montarSwatches();
+    render();
+    statusApp('Rascunho recuperado automaticamente.', 'ok');
+  } catch (e) { /* ignora */ }
+}
 
 // Carrega um texto grande como um carrossel Notas (um card por bloco #N / linha em branco).
 function carregarTextoComoNotas(texto) {
@@ -324,11 +344,31 @@ function montarCampos(t) {
 function lerImagem(event, campoId, bg, t) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    f_()[campoId] = { src: reader.result, zoom: 1, x: 0, y: 0, overlay: bg ? 0.35 : 0 };
+  comprimirImagem(file, 1280, 0.82, (dataUrl) => {
+    f_()[campoId] = { src: dataUrl, zoom: 1, x: 0, y: 0, overlay: bg ? 0.35 : 0 };
     if (t) montarCampos(t);
     render();
+  });
+}
+
+// Redimensiona e comprime a imagem antes de guardar (evita arquivos gigantes).
+function comprimirImagem(file, maxDim, qualidade, cb) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w >= h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else if (h > w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(canvas.toDataURL('image/jpeg', qualidade));
+      } catch (e) { cb(reader.result); }
+    };
+    img.onerror = () => cb(reader.result);
+    img.src = reader.result;
   };
   reader.readAsDataURL(file);
 }
@@ -361,6 +401,7 @@ function render() {
   const empty = document.getElementById('preview-empty');
   const bar = document.getElementById('download-bar');
   renderCards(grid, empty, bar);
+  if (typeof salvarRascunho === 'function') salvarRascunho();
 }
 
 function renderCards(grid, empty, bar) {
